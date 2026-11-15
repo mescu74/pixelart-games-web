@@ -2,26 +2,29 @@
 const {CENTER:C,SIZE,RINGS,geo,distance,radial,project,MISSIONS,CityMap}=BA;
 const $=s=>document.querySelector(s),W=960,H=600,SAVE='ba-invadida-v2';
 let city,world,arcade,state=BA.initial(),started=false,modalOpen=false,mapOpen=false,soundOn=false,audio,route=[],saveAvailable=true;
+const NAV=StreetNavigation;
 const held={up:false,down:false,left:false,right:false,fire:false,action:false};
 let toastTimer;
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('visible'),4200);}
 function beep(freq=440,length=.08,type='square'){if(!soundOn)return;try{audio??=new (window.AudioContext||window.webkitAudioContext)();audio.resume();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+length);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+length);}catch{}}
 function save(){if(!world||!started)return;state.x=world.hero.x;state.y=world.hero.y;state.discovered=[...world.discovered];try{localStorage.setItem(SAVE,JSON.stringify(state));}catch{if(saveAvailable){saveAvailable=false;toast('El navegador no permite guardar. La partida sigue en esta pestaña.');}}}
 function sync(){
+ $('.fire-touch').textContent=arcade?'DISPARAR':'CORRER';
+ const street=started&&!arcade;$('.screen').classList.toggle('street-view',street);$('#street-guide').classList.toggle('hidden',!street);$('#street-bottom').classList.toggle('hidden',!street);
  $('#mates').innerHTML=Array.from({length:3},(_,i)=>`<img class="mate-life ${i<state.mates?'':'empty'}" src="assets/${i<state.mates?'mate-icon':'mate-empty'}.png" alt="" width="32" height="32">`).join('');$('#mates').setAttribute('aria-label',`${state.mates} de 3 mates`);$('#inventory').innerHTML=`<span><img src="assets/thermos.png" alt="Termos" width="24" height="24"> ${state.thermos}</span><span><img src="assets/yerba.png" alt="Yerba" width="24" height="24"> ${state.yerba}</span>`;$('#progress').textContent=`${Math.min(4,state.stage)} / 4`;
  const m=MISSIONS[Math.min(4,state.stage)];$('#mission-number').textContent=String(Math.min(5,state.stage+1)).padStart(2,'0');$('#mission-title').textContent=state.won?'¡Buenos Aires liberada!':m.name;$('#mission-copy').textContent=state.won?'El Obelisco vuelve a ser nuestro. Podés seguir explorando la ciudad.':m.copy;$('#mode').textContent=arcade?'ARCADE / '+m.label:'EXPLORACIÓN / '+String(Math.min(5,state.stage+1)).padStart(2,'0');
  $('#chapters').querySelectorAll('li').forEach((li,i)=>{li.classList.toggle('done',i<state.stage);li.classList.toggle('active',i===state.stage);});
 }
-function showModal(tag,title,copy,label,action){modalOpen=true;$('#modal-tag').textContent=tag;$('#modal-title').textContent=title;$('#modal-copy').textContent=copy;$('#modal-action').textContent=label;$('#modal').classList.remove('hidden');$('#modal-action').onclick=()=>{modalOpen=false;$('#modal').classList.add('hidden');action?.();};}
-function brew(){toast(BA.brew(state));beep(380);sync();save();}
-function toggleMap(){if(!started||arcade||modalOpen)return;mapOpen=!mapOpen;$('#map-panel').classList.toggle('hidden',!mapOpen);if(mapOpen)drawMap($('#bigmap'),true);}
+function showModal(tag,title,copy,label,action){world?.stopWalking();modalOpen=true;$('#modal-tag').textContent=tag;$('#modal-title').textContent=title;$('#modal-copy').textContent=copy;$('#modal-action').textContent=label;$('#modal').classList.remove('hidden');$('#modal-action').onclick=()=>{modalOpen=false;$('#modal').classList.add('hidden');action?.();};}
+function brew(){toast(BA.brew(state));beep(380);sync();world?.findRoute();world?.paintNavigation();save();}
+function toggleMap(){if(!started||arcade||modalOpen)return;mapOpen=!mapOpen;if(mapOpen)world.stopWalking();$('#map-panel').classList.toggle('hidden',!mapOpen);if(mapOpen)drawMap($('#bigmap'),true);}
 const textStyle={fontFamily:'monospace',fontSize:'10px',color:'#c6cbd0',stroke:'#111a28',strokeThickness:3};
 class BuenosAires extends Phaser.Scene{
  constructor(){super('city');}
  preload(){this.load.json('map','map-data.json');PixelAssets.preload(this);}
  create(){
   world=this;try{city=new CityMap(this.cache.json.get('map'));}catch(e){$('#load-error').textContent='No se pudo cargar el mapa. Recargá la página.';console.error(e);return;}
-  PixelAssets.install(this);this.discovered=new Set();this.pickupSprites=[];this.blocked=new Set();this.decor=[];this.lastTick=0;this.lastRoute=0;this.lastSave=0;this.warnAt=0;this.nextHit=0;
+  PixelAssets.install(this);this.discovered=new Set();this.pickupSprites=[];this.blocked=new Set();this.decor=[];this.lastTick=0;this.lastRoute=0;this.lastSave=0;this.warnAt=0;this.nextHit=0;this.walkPoints=[];this.walkStuck=0;this.navGoal=null;
   try{const saved=JSON.parse(localStorage.getItem(SAVE));if(BA.validSave(saved)){state=saved;this.discovered=new Set(saved.discovered);}}catch{}
   this.targets=MISSIONS.map(m=>city.nearest(geo(m.lat,m.lon),true));
   this.spawn=city.nearest(geo(-34.6095,-58.394),true);
@@ -33,26 +36,33 @@ class BuenosAires extends Phaser.Scene{
   this.targetMarkers=this.targets.map((p,i)=>{const box=PixelAssets.animate(this.add.sprite(p.x,p.y,'terminal').setScale(1.25).setDepth(5),'terminal'),label=this.add.text(p.x,p.y-38,`${String(i+1).padStart(2,'0')} / ${MISSIONS[i].place.toUpperCase()}`,{...textStyle,fontSize:'9px',color:'#a8e8f5'}).setOrigin(.5).setDepth(6);return{box,label};});
   const start=state.x==null?this.spawn:{x:state.x,y:state.y};let safe=city.nearest(start,true);if(!safe||radial(safe)<RINGS[Math.min(state.stage,4)]-5)safe=this.spawn;
   this.hero=this.add.sprite(safe.x,safe.y,'porteño').setScale(1.5).setDepth(12);this.shadow=this.add.ellipse(safe.x,safe.y+22,25,10,0x070a12,.4).setDepth(11);
-  this.cameras.main.setBounds(0,0,SIZE,SIZE);this.cameras.main.setZoom(1.35);this.cameras.main.startFollow(this.hero,true,.14,.14);this.cameras.main.roundPixels=true;
+  this.cameras.main.setBounds(0,0,SIZE,SIZE);this.cameras.main.setZoom(1.9);this.cameras.main.startFollow(this.hero,true,.14,.14);this.cameras.main.roundPixels=true;
   this.routeGraphics=this.add.graphics().setDepth(4);this.fog=this.add.graphics().setDepth(25);this.hint=this.add.text(W/2,H-32,'',{...textStyle,fontSize:'13px',backgroundColor:'#101827dd',padding:{x:12,y:8},color:'#f3d788'}).setOrigin(.5).setScrollFactor(0).setDepth(50);
   this.compass=this.add.text(W/2,35,'',{...textStyle,fontSize:'12px',backgroundColor:'#101827dc',padding:{x:12,y:7}}).setOrigin(.5).setScrollFactor(0).setDepth(50);
+  this.hint.setVisible(false);this.compass.setVisible(false);
+  this.playerHalo=this.add.ellipse(safe.x,safe.y+20,38,15,0x88e2ed,.2).setStrokeStyle(1,0xb5f8f2,.85).setDepth(10);
+  this.playerLabel=this.add.text(safe.x,safe.y-33,'VOS',{...textStyle,fontSize:'8px',color:'#d5ffff',backgroundColor:'#203a46',padding:{x:3,y:2}}).setOrigin(.5).setDepth(14);
+  this.goalBeacon=this.add.graphics().setDepth(9);this.goalLabel=this.add.text(0,0,'',{...textStyle,fontSize:'10px',color:'#ffe2a0',backgroundColor:'#25283b',padding:{x:5,y:4}}).setOrigin(.5).setDepth(10);
+  this.tapMarker=this.add.graphics().setDepth(8);
+  this.input.on('pointerdown',pointer=>{if(started&&!arcade&&!modalOpen&&!mapOpen)this.walkTo({x:pointer.worldX,y:pointer.worldY});});
   this.keys=this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,C,M,SPACE,ESC');this.input.keyboard.addCapture(['UP','DOWN','LEFT','RIGHT','SPACE']);
   this.input.keyboard.on('keydown-E',()=>this.interact());this.input.keyboard.on('keydown-C',()=>{if(started&&!arcade&&!modalOpen)brew();});this.input.keyboard.on('keydown-M',toggleMap);
-  this.input.keyboard.on('keydown-ESC',()=>{if(mapOpen)toggleMap();});
+  this.input.keyboard.on('keydown-ESC',()=>{if(mapOpen)toggleMap();else this.stopWalking();});
   this.makeSupplies();this.refreshMission();this.reveal();drawMap($('#minimap'));sync();
   $('#start').disabled=false;$('#start').textContent=state.x!=null?'CONTINUAR LA RESISTENCIA →':'SALIR A LA CALLE →';
  }
  paintCity(){
-  const g=this.add.graphics();g.fillStyle(0x202936);g.fillRect(0,0,SIZE,SIZE);
+  const g=this.add.graphics();g.fillStyle(0x373d46);g.fillRect(0,0,SIZE,SIZE);
   const rng=new Phaser.Math.RandomDataGenerator(['buenos-aires-invadida-1986']);
-  for(let x=55;x<SIZE-70;x+=54)for(let y=55;y<SIZE-70;y+=60){const w=rng.between(26,43),h=rng.between(31,49),p={x:x+w/2,y:y+h/2};if(radial(p)>3370)continue;const corners=[{x,y},{x:x+w,y},{x,y:y+h},{x:x+w,y:y+h},p];if(corners.some(c=>{const n=city.nearest(c);return !n||n.d<n.edge.width/2+14;}))continue;
-   g.fillStyle(0x101a28,.65);g.fillRect(x+7,y+9,w,h);g.fillStyle(rng.pick([0x4b4f60,0x515766,0x46545f,0x5c565e,0x54545a]));g.fillRect(x,y,w,h);g.fillStyle(0x6e6c74);g.fillRect(x,y,w,3);g.fillStyle(0x303a4b);g.fillRect(x+4,y+5,w-8,h-10);g.fillStyle(0x5a6573);g.fillRect(x+7,y+8,9,7);g.fillStyle(0xddbe79,.55);for(let a=x+4;a<x+w-4;a+=9)g.fillRect(a,y+h-4,3,3);
+  for(let x=55;x<SIZE-70;x+=54)for(let y=55;y<SIZE-70;y+=60){const w=rng.between(30,42),h=rng.between(32,44),p={x:x+w/2,y:y+h/2};if(radial(p)>3370)continue;const corners=[{x,y},{x:x+w,y},{x,y:y+h},{x:x+w,y:y+h},p];if(corners.some(c=>{const n=city.nearest(c);return !n||n.d<n.edge.width/2+7;}))continue;
+   g.fillStyle(0x101a28,.65);g.fillRect(x+7,y+9,w,h);g.fillStyle(rng.pick([0x786b64,0x737880,0x7b706c,0x626c78,0x8a776a]));g.fillRect(x,y,w,h);g.fillStyle(0xa99a84);g.fillRect(x,y,w,3);g.fillStyle(0x505965);g.fillRect(x+4,y+5,w-8,h-10);g.fillStyle(0x829094);g.fillRect(x+7,y+8,9,7);g.fillStyle(0xddbe79,.55);for(let a=x+4;a<x+w-4;a+=9)g.fillRect(a,y+h-4,3,3);
   }
   // Sidewalks and road centerlines follow the source coordinates, including diagonals.
-  for(const e of city.edges){g.lineStyle(e.width+11,0x657077);g.lineBetween(e.a.x,e.a.y,e.b.x,e.b.y);}
-  for(const e of city.edges){g.lineStyle(e.width,0x293647);g.lineBetween(e.a.x,e.a.y,e.b.x,e.b.y);}
-  for(const e of city.edges){if(e.length>40){const dx=(e.b.x-e.a.x)/e.length,dy=(e.b.y-e.a.y)/e.length;g.lineStyle(1,0xb7ad83,.55);for(let d=15;d<e.length-10;d+=27)g.lineBetween(e.a.x+dx*d,e.a.y+dy*d,e.a.x+dx*(d+8),e.a.y+dy*(d+8));}}
-  const labels=new Set();for(const e of city.edges){if(e.length<75||radial(e.a)>2800)continue;let x=(e.a.x+e.b.x)/2,y=(e.a.y+e.b.y)/2,key=e.name+Math.floor(x/700)+','+Math.floor(y/700);if(labels.has(key))continue;labels.add(key);let angle=Math.atan2(e.b.y-e.a.y,e.b.x-e.a.x);if(angle>Math.PI/2||angle< -Math.PI/2)angle+=Math.PI;this.add.text(x,y-3,e.name.replace('Avenida ','AV. ').toUpperCase(),{...textStyle,fontSize:'7px',color:'#a0abb6',strokeThickness:2}).setOrigin(.5).setRotation(angle).setDepth(2);}
+  for(const e of city.edges){g.lineStyle(e.width+13,0xb0a58e);g.lineBetween(e.a.x,e.a.y,e.b.x,e.b.y);}
+  for(const e of city.edges){g.lineStyle(e.width,0x4b5961);g.lineBetween(e.a.x,e.a.y,e.b.x,e.b.y);}
+  for(const e of city.edges){if(e.length>40){const dx=(e.b.x-e.a.x)/e.length,dy=(e.b.y-e.a.y)/e.length;g.lineStyle(1,0xdfd2a4,.65);for(let d=15;d<e.length-10;d+=27)g.lineBetween(e.a.x+dx*d,e.a.y+dy*d,e.a.x+dx*(d+8),e.a.y+dy*(d+8));}}
+  for(const n of city.nodes){if(n.links.length<3||radial(n)>1900)continue;const e=n.links[0].edge,a=Math.atan2(e.b.y-e.a.y,e.b.x-e.a.x),dx=Math.cos(a),dy=Math.sin(a),width=e.width/2-2;g.lineStyle(2,0xd1cbb8,.7);for(let k=15;k<28;k+=5){const x=n.x+dx*k,y=n.y+dy*k;g.lineBetween(x-dy*width,y+dx*width,x+dy*width,y-dx*width);}}
+  const labels=new Set();for(const e of city.edges){if(e.length<90||radial(e.a)>2800||!/Corrientes|9 de Julio|Callao|Rivadavia/.test(e.name))continue;let x=(e.a.x+e.b.x)/2,y=(e.a.y+e.b.y)/2,key=e.name+Math.floor(x/1000)+','+Math.floor(y/1000);if(labels.has(key))continue;labels.add(key);let angle=Math.atan2(e.b.y-e.a.y,e.b.x-e.a.x);if(angle>Math.PI/2||angle< -Math.PI/2)angle+=Math.PI;this.add.text(x,y-3,NAV.roadLabel(e.name).toUpperCase(),{...textStyle,fontSize:'7px',color:'#dbd5bf',strokeThickness:2}).setOrigin(.5).setRotation(angle).setAlpha(.65).setDepth(2);}
   // Porteño landmarks are illustrated; their markers use geographic coordinates.
   this.landmark(-34.6095,-58.3928,'CONGRESO',0x708681,110,64);
   this.landmark(-34.6041,-58.3888,'TEATRO SAN MARTÍN',0x8d827b,70,48);
@@ -62,7 +72,7 @@ class BuenosAires extends Phaser.Scene{
   this.mothership=PixelAssets.animate(this.add.sprite(C,C-123,'saucer').setScale(4),'saucer').setDepth(15);this.tweens.add({targets:this.mothership,y:C-136,duration:1300,yoyo:true,repeat:-1});
   for(let i=0;i<230;i++){const e=city.edges[(i*47)%city.edges.length];if(radial(e.a)>2800)continue;const p=project({x:(e.a.x+e.b.x)/2,y:(e.a.y+e.b.y)/2},e.a,e.b),a=Math.atan2(e.b.y-e.a.y,e.b.x-e.a.x);if(i%3===0)this.add.image(p.x,p.y,i%9===0?'bus':'taxi').setScale(i%9===0?1.3:1).setRotation(a).setDepth(2);else this.add.image(p.x+Math.sin(a)*23,p.y-Math.cos(a)*23,'tree').setScale(1.1).setDepth(3);}
   // Local shop signs make the city readable even between landmarks.
-  for(const [lat,lon,label,color] of [[-34.6045,-58.389,'PIZZA AL MOLDE',0xd8ac76],[-34.6055,-58.391,'KIOSCO 24 HS',0x9ad8b6],[-34.6037,-58.3848,'LIBRERÍA',0xe2ce8e],[-34.608,-58.393,'CAFÉ · SUBMARINO',0xd8b1a5],[-34.6027,-58.3802,'SUBTE B',0xea9285]]){const p=city.nearest(geo(lat,lon),true);this.add.text(p.x,p.y-31,label,{...textStyle,fontSize:'8px',color:'#'+color.toString(16),backgroundColor:'#19242d',padding:{x:5,y:3}}).setOrigin(.5).setDepth(4);}
+  for(const [lat,lon,label,color] of [[-34.6045,-58.389,'PIZZA AL MOLDE',0xd8ac76],[-34.6055,-58.391,'KIOSCO 24 HS',0x9ad8b6],[-34.6037,-58.3848,'LIBRERÍA',0xe2ce8e],[-34.608,-58.393,'CAFÉ · SUBMARINO',0xd8b1a5],[-34.6027,-58.3802,'SUBTE B',0xea9285]]){const p=city.nearest(geo(lat,lon),true);if(this.targets.some(t=>distance(t,p)<140))continue;this.add.text(p.x,p.y-31,label,{...textStyle,fontSize:'8px',color:'#'+color.toString(16),backgroundColor:'#19242d',padding:{x:5,y:3}}).setOrigin(.5).setDepth(4);}
  }
  landmark(lat,lon,label,color,w,h){const p=geo(lat,lon),key=label==='CONGRESO'?'congress':label==='TEATRO COLÓN'?'colon':label==='GRAN REX'?'gran-rex':'san-martin';this.add.image(p.x,p.y,key).setDisplaySize(w,h).setDepth(1);this.add.text(p.x,p.y-h/2-12,label,{...textStyle,fontSize:'9px',color:'#ebd4a3'}).setOrigin(.5).setDepth(2);}
  paintBarriers(){
@@ -75,37 +85,79 @@ class BuenosAires extends Phaser.Scene{
   anchors.forEach((p,j)=>{for(let i=0;i<4;i++){const near=city.nearest({x:p.x+(i%2?48:-48),y:p.y+(i<2?40:-40)},true);const type=i%2?'yerba':'thermos',key=`s${j}-${i}`;const icon=this.add.image(near.x,near.y,type).setScale(1).setDepth(8);const halo=this.add.circle(near.x,near.y,13,0x99d6aa,.13).setDepth(7);const item={id:key,x:near.x,y:near.y,type,icon,halo,ready:used.has(key)?this.time.now+20000:0};this.pickupSprites.push(item);}});
   for(let i=0;i<60;i++){const e=city.edges[(i*173+25)%city.edges.length];if(radial(e.a)>3100)continue;let p=e.a,key=`r${id++}`,type=i%2?'yerba':'thermos';let icon=this.add.image(p.x,p.y,type).setScale(1).setDepth(8),halo=this.add.circle(p.x,p.y,12,0x99d6aa,.13).setDepth(7);this.pickupSprites.push({id:key,x:p.x,y:p.y,type,icon,halo,ready:used.has(key)?this.time.now+20000:0});}
  }
- refreshMission(){this.paintBarriers();for(let i=0;i<this.targetMarkers.length;i++){const m=this.targetMarkers[i],visible=i<=state.stage;m.box.setVisible(visible);m.label.setVisible(visible);m.box.setTint(i<state.stage?0x93d2a2:0xffffff);}
+ refreshMission(){this.paintBarriers();for(let i=0;i<this.targetMarkers.length;i++){const m=this.targetMarkers[i],visible=i<=state.stage;m.box.setVisible(visible);m.label.setVisible(false);m.box.setTint(i<state.stage?0x93d2a2:0xffffff);}
   this.mothership.setVisible(!state.won);this.findRoute();sync();}
- findRoute(){if(state.won){route=[];return;}route=city.path(this.hero,this.targets[Math.min(4,state.stage)],Math.min(4,state.stage),this.blocked);this.lastRoute=this.time.now;}
+ navigationGoal(){
+  if(state.mates===0){
+   if(state.thermos&&state.yerba)return{kind:'brew',point:this.hero,place:'Cebá para recuperar una vida'};
+   const missing=state.thermos<1?'thermos':'yerba';
+   const supplies=this.pickupSprites.filter(s=>s.type===missing&&s.ready<=this.time.now&&radial(s)>=RINGS[Math.min(state.stage,4)]).sort((a,b)=>distance(a,this.hero)-distance(b,this.hero));
+   let best=null;for(const item of supplies.slice(0,5)){const points=NAV.route(city,this.hero,item,Math.min(4,state.stage),this.blocked);if(points.length&&(!best||NAV.length(points)<best.length))best={kind:'supply',point:item,place:missing==='thermos'?'Buscá un termo':'Buscá yerba',points,length:NAV.length(points)};}
+   if(best)return best;
+   return{kind:'waiting',point:this.hero,place:'Esperá que se repongan las provisiones'};
+  }
+  return{kind:'mission',point:this.targets[Math.min(4,state.stage)],place:MISSIONS[Math.min(4,state.stage)].place};
+ }
+ findRoute(){
+  if(state.won){route=[];return;}this.navGoal=this.navigationGoal();
+  route=this.navGoal.points||((this.navGoal.kind==='brew'||this.navGoal.kind==='waiting')?[]:NAV.route(city,this.hero,this.navGoal.point,Math.min(4,state.stage),this.blocked));this.lastRoute=this.time.now;
+ }
+ stopWalking(){this.walkPoints=[];this.walkStuck=0;this.tapMarker?.clear();$('#walk-cancel').classList.add('hidden');}
+ walkTo(point){
+  const street=city.nearest(point);if(!street||street.d>street.edge.width/2+10){toast('Elegí una calle clara. Los edificios y las manzanas oscuras no se pueden atravesar.');return;}
+  const points=NAV.route(city,this.hero,street,Math.min(4,state.stage),this.blocked);if(!points.length){toast('Ese camino sigue bloqueado. Ganá el desafío dorado para abrir el cerco.');return;}
+  this.walkPoints=points.slice(1);this.walkStuck=0;this.tapMarker.clear().lineStyle(2,0xffffff,.9).strokeCircle(street.x,street.y,9);$('#walk-cancel').classList.toggle('hidden',!this.walkPoints.length);
+ }
  reveal(){const gx=Math.floor(this.hero.x/150),gy=Math.floor(this.hero.y/150);for(let x=-2;x<=2;x++)for(let y=-2;y<=2;y++)if(x*x+y*y<=5)this.discovered.add((gx+x)+','+(gy+y));}
  nearbyTarget(){return this.targets.findIndex((p,i)=>i<=state.stage&&distance(p,this.hero)<48);}
  interact(){if(!started||arcade||modalOpen||mapOpen)return;const index=this.nearbyTarget();if(index<0){toast('Acercate a una terminal celeste. El radar y los puntos en la calle te guían.');return;}if(index<state.stage){toast('Esta señal ya está liberada. Seguí hacia el próximo objetivo.');return;}if(state.won){toast('¡El Obelisco es nuestro! Seguí explorando la ciudad.');return;}if(!state.mates){toast('Sin mate no se pelea. Buscá termo y yerba, y presioná C para cebar.');return;}
-  const m=MISSIONS[index];showModal('SEÑAL '+String(index+1).padStart(2,'0')+' / '+m.place.toUpperCase(),m.label,m.goal+' Cada impacto cuesta un mate. Si abandonás, perdés un mate.','ENTRAR AL DESAFÍO →',()=>{this.scene.launch('arcade',{kind:m.type});this.scene.pause();});
+  this.stopWalking();const m=MISSIONS[index];showModal('SEÑAL '+String(index+1).padStart(2,'0')+' / '+m.place.toUpperCase(),m.label,m.goal+' Cada impacto cuesta un mate. Si abandonás, perdés un mate.','ENTRAR AL DESAFÍO →',()=>{this.scene.launch('arcade',{kind:m.type});this.scene.pause();});
  }
  move(dx,dy,dt){const speed=held.fire||this.keys.SPACE.isDown?230:155,len=Math.hypot(dx,dy)||1;let next={x:this.hero.x+dx/len*speed*dt,y:this.hero.y+dy/len*speed*dt};const n=city.nearest(next);if(!n)return;const allowed=n.edge.width/2+4;if(n.d>allowed){if(n.d>allowed+12)return;const a=(allowed-1)/(n.d||1);next={x:n.x+(next.x-n.x)*a,y:n.y+(next.y-n.y)*a};}
   if(radial(next)<RINGS[Math.min(state.stage,4)]&&state.stage<4){if(this.time.now>this.warnAt){toast('Cerco alienígena. Ganá el desafío marcado para abrir el camino.');this.warnAt=this.time.now+3500;}return;}
   for(const e of city.nearby(next))if(this.blocked.has(e.id)){const p={x:(e.a.x+e.b.x)/2,y:(e.a.y+e.b.y)/2};if(distance(next,p)<e.width/2+9){if(this.time.now>this.warnAt){toast('Autos chocados. Buscá otra calle; el recorrido celeste marca el desvío.');this.warnAt=this.time.now+3500;}return;}}
-  this.hero.setPosition(next.x,next.y);if(dx)this.hero.setFlipX(dx<0);if(this.hero.anims.currentAnim?.key!=='porteño-loop'||!this.hero.anims.isPlaying)this.hero.play('porteño-loop');this.shadow.setPosition(next.x,next.y+22);
+  this.hero.setPosition(next.x,next.y);if(dx)this.hero.setFlipX(dx<0);if(this.hero.anims.currentAnim?.key!=='porteño-loop'||!this.hero.anims.isPlaying)this.hero.play('porteño-loop');this.shadow.setPosition(next.x,next.y+22);this.playerHalo.setPosition(next.x,next.y+20);this.playerLabel.setPosition(next.x,next.y-33);
  }
- paintNavigation(){const g=this.routeGraphics;g.clear();if(route.length){let start=this.hero;let left=1100;for(const p of route){const d=distance(start,p);if(d>2){g.lineStyle(2,0x8bdded,.15);g.lineBetween(start.x,start.y,p.x,p.y);for(let k=10;k<d;k+=19){const t=k/d;g.fillStyle(0x9be6ef,.7);g.fillRect(start.x+(p.x-start.x)*t-1,start.y+(p.y-start.y)*t-1,3,3);}}left-=d;if(left<0)break;start=p;}}
-  const target=this.targets[Math.min(state.stage,4)],d=distance(this.hero,target),a=Math.atan2(target.y-this.hero.y,target.x-this.hero.x),arrows=['→','↘','↓','↙','←','↖','↑','↗'],index=(Math.round(a/(Math.PI/4))+8)%8;let length=0;for(let i=1;i<route.length;i++)length+=distance(route[i-1],route[i]);$('#objective-distance').textContent=state.won?'CIUDAD LIBERADA · ¡VAMOS, ARGENTINA!':`${arrows[index]} ${Math.round(Math.max(d,length)/1.05)} m · ${MISSIONS[Math.min(4,state.stage)].place}`;this.compass.setText(state.won?'BUENOS AIRES LIBERADA':`${arrows[index]} ${Math.round(d/1.05)} m · ${MISSIONS[Math.min(4,state.stage)].place.toUpperCase()}`);
+ paintNavigation(){
+  if(!this.hero)return;const g=this.routeGraphics;g.clear();const goal=this.navGoal||this.navigationGoal();const walking=this.walkPoints.length>0;
+  const active=walking?[{x:this.hero.x,y:this.hero.y},...this.walkPoints]:NAV.remaining(route,this.hero),nav=NAV.instruction(active,this.hero),color=goal.kind==='supply'?0xa2df9c:0x9aebee;
+  let reach=0;for(let i=1;i<active.length;i++){const a=active[i-1],b=active[i],d=distance(a,b);g.lineStyle(9,0x183b43,.65);g.lineBetween(a.x,a.y,b.x,b.y);g.lineStyle(3,color,.95);g.lineBetween(a.x,a.y,b.x,b.y);const dx=(b.x-a.x)/(d||1),dy=(b.y-a.y)/(d||1);for(let k=15;k<d-3;k+=29){const x=a.x+dx*k,y=a.y+dy*k;g.fillStyle(color);g.fillTriangle(x+dx*4,y+dy*4,x-dx*3-dy*3,y-dy*3+dx*3,x-dx*3+dy*3,y-dy*3-dx*3);}reach+=d;if(reach>500)break;}
+  const n=city.nearest(this.hero),street=NAV.roadLabel(n?.edge.name||'Buenos Aires');$('#guide-street').textContent=street+(nav.after?' · '+nav.after:'');$('#location').textContent=street.toUpperCase()+' · CABA';
+  const arrived=goal.kind==='mission'&&distance(this.hero,goal.point)<48;
+  $('#guide-arrow').textContent=state.won?'✓':arrived&&!walking?'◆':nav.symbol;
+  $('#guide-destination').textContent=state.won?'BUENOS AIRES LIBERADA':walking?'CAMINANDO HACIA TU MARCA':goal.kind==='mission'?`DESAFÍO ${Math.min(5,state.stage+1)} · ${goal.place}`:'SIN MATES · '+goal.place.toUpperCase();
+  $('#guide-instruction').textContent=state.won?'La ciudad es tuya. Seguí explorando.':walking?nav.text:goal.kind==='brew'?'Tenés termo y yerba. Cebá un mate.':goal.kind==='waiting'?'Las provisiones vuelven a aparecer.':arrived?'Llegaste. Entrá al desafío dorado.':nav.text;
+  $('#objective-distance').textContent=state.won?'CIUDAD LIBERADA':goal.kind==='brew'?'TERMO + YERBA LISTOS':arrived?'ESTÁS ACÁ · ENTRÁ CON E':`${Math.round(NAV.length(NAV.remaining(route,this.hero))/1.05)} m por las calles · ${goal.place}`;
+  const action=$('#street-interact'),canBrew=state.mates===0&&state.thermos>0&&state.yerba>0;action.classList.toggle('hidden',!(canBrew||arrived&&!walking&&!state.won));action.textContent=canBrew?'[ C ] CEBAR UN MATE':'[ E ] ENTRAR A '+MISSIONS[Math.min(4,state.stage)].label;
+  $('#walk-tip').textContent=walking?'CAMINANDO A TU MARCA · WASD O × PARA FRENAR':arrived?'EL POSTE DORADO ABRE EL MINIJUEGO':'CLIC / TOQUE EN UNA CALLE PARA CAMINAR · O USÁ WASD';
+  this.goalBeacon.clear();this.goalLabel.setVisible(!state.won&&goal.kind!=='brew'&&goal.kind!=='waiting');
+  if(!state.won&&goal.kind!=='brew'&&goal.kind!=='waiting'){
+   const p=goal.point,r=18+Math.sin(this.time.now*.006)*3,glow=goal.kind==='supply'?0xa2df9c:0xf3cf76;this.goalBeacon.lineStyle(2,glow,.9);this.goalBeacon.strokeCircle(p.x,p.y,r);this.goalBeacon.lineStyle(7,glow,.15);this.goalBeacon.lineBetween(p.x,p.y-14,p.x,p.y-53);this.goalBeacon.fillStyle(glow);this.goalBeacon.fillTriangle(p.x,p.y-24,p.x-6,p.y-34,p.x+6,p.y-34);
+   this.goalLabel.setPosition(p.x,p.y-63).setText(goal.kind==='supply'?'PROVISIÓN':`DESAFÍO ${Math.min(5,state.stage+1)}`).setColor(goal.kind==='supply'?'#a9e59f':'#ffe2a0');
+  }
  }
  paintFog(){const g=this.fog;g.clear();const view=this.cameras.main.worldView;for(let x=Math.floor(view.x/150)-1;x<=Math.ceil(view.right/150)+1;x++)for(let y=Math.floor(view.y/150)-1;y<=Math.ceil(view.bottom/150)+1;y++)if(!this.discovered.has(x+','+y)){g.fillStyle(0x101724,.94);g.fillRect(x*150,y*150,150,150);}}
- update(time,delta){if(!this.hero)return;if(!started||modalOpen||mapOpen){this.hero.anims.stop();this.hero.setFrame(0);return;}const k=this.keys,dx=(k.RIGHT.isDown||k.D.isDown||held.right?1:0)-(k.LEFT.isDown||k.A.isDown||held.left?1:0),dy=(k.DOWN.isDown||k.S.isDown||held.down?1:0)-(k.UP.isDown||k.W.isDown||held.up?1:0);if(dx||dy)this.move(dx,dy,Math.min(delta,45)/1000);else {this.hero.anims.stop();this.hero.setFrame(0);}
-  for(const s of this.pickupSprites){const ready=time>s.ready;s.icon.setVisible(ready);s.halo.setVisible(ready);if(ready&&distance(s,this.hero)<20){state[s.type]=Math.min(99,state[s.type]+1);s.ready=time+25000;if(!state.pickups.includes(s.id))state.pickups.push(s.id);beep(s.type==='yerba'?660:520);toast((s.type==='yerba'?'Yerba':'Termo')+' en la mochila. '+(state.mates<3?'C para cebar un mate.':'Reservalo para después.'));sync();}}
-  const near=this.nearbyTarget();this.hint.setText(near===state.stage&&!state.won?'[ E ] ENTRAR AL DESAFÍO':state.mates===0?'SIN MATES · BUSCÁ TERMO + YERBA · [ C ] CEBAR':'');
-  if(time-this.lastTick>220){this.lastTick=time;this.reveal();this.paintFog();drawMap($('#minimap'));this.paintNavigation();const n=city.nearest(this.hero);$('#location').textContent=(n?.edge.name||'Buenos Aires').toUpperCase()+' · CABA';if(time-this.lastRoute>1600)this.findRoute();}
+ update(time,delta){
+  if(!this.hero)return;if(!started||modalOpen||mapOpen){this.hero.anims.stop();this.hero.setFrame(0);return;}
+  const k=this.keys,dx=(k.RIGHT.isDown||k.D.isDown||held.right?1:0)-(k.LEFT.isDown||k.A.isDown||held.left?1:0),dy=(k.DOWN.isDown||k.S.isDown||held.down?1:0)-(k.UP.isDown||k.W.isDown||held.up?1:0),dt=Math.min(delta,45)/1000;
+  if(dx||dy){this.stopWalking();this.move(dx,dy,dt);}else if(this.walkPoints.length){
+   while(this.walkPoints.length&&distance(this.hero,this.walkPoints[0])<4)this.walkPoints.shift();
+   if(this.walkPoints.length){const p=this.walkPoints[0],before={x:this.hero.x,y:this.hero.y};this.move(p.x-this.hero.x,p.y-this.hero.y,dt);this.walkStuck=distance(before,this.hero)<.1?this.walkStuck+dt:0;if(this.walkStuck>1){this.stopWalking();toast('Hay un obstáculo. Elegí otra calle o seguí la ruta celeste.');}}
+   else {this.stopWalking();this.findRoute();}
+  }else {this.hero.anims.stop();this.hero.setFrame(0);}
+  for(const s of this.pickupSprites){const ready=time>s.ready;s.icon.setVisible(ready);s.halo.setVisible(ready);if(ready&&distance(s,this.hero)<20){state[s.type]=Math.min(99,state[s.type]+1);s.ready=time+25000;if(!state.pickups.includes(s.id))state.pickups.push(s.id);beep(s.type==='yerba'?660:520);toast((s.type==='yerba'?'Yerba':'Termo')+' en la mochila. '+(state.mates<3?'C para cebar un mate.':'Reservalo para después.'));sync();this.findRoute();}}
+  if(time-this.lastTick>120){this.lastTick=time;this.reveal();this.paintFog();if(time-this.lastRoute>850)this.findRoute();this.paintNavigation();drawMap($('#minimap'));}
   if(time-this.lastSave>2500){this.lastSave=time;save();}
  }
+
 }
-function drawMap(canvas,full=false){if(!world?.hero)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,p=world.hero,span=full?7200:1300,scale=Math.min(w,h)/span,cx=full?C:p.x,cy=full?C:p.y,xy=q=>({x:w/2+(q.x-cx)*scale,y:h/2+(q.y-cy)*scale});ctx.fillStyle='#101a29';ctx.fillRect(0,0,w,h);ctx.save();ctx.lineCap='round';for(const e of city.edges){const a=xy(e.a),b=xy(e.b);if(Math.max(a.x,b.x)<0||Math.min(a.x,b.x)>w||Math.max(a.y,b.y)<0||Math.min(a.y,b.y)>h)continue;const found=world.discovered.has(Math.floor(e.a.x/150)+','+Math.floor(e.a.y/150));ctx.strokeStyle=found?'#6c8195':'#253249';ctx.lineWidth=full?1:2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+function drawMap(canvas,full=false){if(!world?.hero)return;const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,p=world.hero,span=full?7200:760,scale=Math.min(w,h)/span,cx=full?C:p.x,cy=full?C:p.y,xy=q=>({x:w/2+(q.x-cx)*scale,y:h/2+(q.y-cy)*scale});ctx.fillStyle='#101a29';ctx.fillRect(0,0,w,h);ctx.save();ctx.lineCap='round';for(const e of city.edges){const a=xy(e.a),b=xy(e.b);if(Math.max(a.x,b.x)<0||Math.min(a.x,b.x)>w||Math.max(a.y,b.y)<0||Math.min(a.y,b.y)>h)continue;const found=world.discovered.has(Math.floor(e.a.x/150)+','+Math.floor(e.a.y/150));ctx.strokeStyle=found?'#6c8195':'#253249';ctx.lineWidth=full?1:2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
  if(state.stage<4){const c=xy({x:C,y:C});ctx.strokeStyle='#a58ae0';ctx.lineWidth=full?2:1;ctx.setLineDash([4,5]);ctx.beginPath();ctx.arc(c.x,c.y,RINGS[state.stage]*scale,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
- if(!full){ctx.strokeStyle='#a5e4ef';ctx.lineWidth=2;ctx.beginPath();route.forEach((n,i)=>{const q=xy(n);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.stroke();}
- for(let i=0;i<world.targets.length;i++){const q=xy(world.targets[i]);ctx.fillStyle=i<state.stage?'#9bd5a6':i===state.stage?'#f3d17d':'#805b9a';ctx.beginPath();ctx.moveTo(q.x,q.y-5);ctx.lineTo(q.x+4,q.y);ctx.lineTo(q.x,q.y+5);ctx.lineTo(q.x-4,q.y);ctx.closePath();ctx.fill();if(full){ctx.font='10px monospace';ctx.fillText(`${i+1}. ${MISSIONS[i].place}`,q.x+9,q.y+(i%2?12:-8));}}
+ if(!full){ctx.strokeStyle='#a5e4ef';ctx.lineWidth=3;ctx.beginPath();NAV.remaining(route,p).forEach((n,i)=>{const q=xy(n);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);});ctx.stroke();}
+ for(let i=0;i<world.targets.length;i++){if(!full&&i!==Math.min(4,state.stage))continue;const q=xy(world.targets[i]);ctx.fillStyle=i<state.stage?'#9bd5a6':i===state.stage?'#f3d17d':'#805b9a';ctx.beginPath();ctx.moveTo(q.x,q.y-5);ctx.lineTo(q.x+4,q.y);ctx.lineTo(q.x,q.y+5);ctx.lineTo(q.x-4,q.y);ctx.closePath();ctx.fill();if(full&&i===Math.min(4,state.stage)){ctx.font='11px monospace';ctx.fillText(`${i+1}. ${MISSIONS[i].place}`,q.x+9,q.y-8);}}
  const ob=xy({x:C,y:C});ctx.fillStyle='#e9e0b9';ctx.fillRect(ob.x-1,ob.y-5,3,10);
  for(const s of world.pickupSprites){if(full||s.ready>world.time.now||!world.discovered.has(Math.floor(s.x/150)+','+Math.floor(s.y/150)))continue;const q=xy(s);ctx.fillStyle='#9cdbab';ctx.fillRect(q.x-2,q.y-2,4,4);}
- const pos=xy(p);ctx.fillStyle='#a6e7f4';ctx.beginPath();ctx.arc(pos.x,pos.y,full?4:5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();ctx.restore();$('#explored').textContent=Math.min(100,Math.round(world.discovered.size/(Math.PI*(3100*1.05/150)**2)*100))+'% EXPLORADO';}
+ const pos=xy(p);ctx.fillStyle='#a6e7f4';ctx.beginPath();ctx.arc(pos.x,pos.y,full?4:5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();ctx.font='bold 10px monospace';ctx.fillStyle='#e7ffff';ctx.fillText('VOS',pos.x+9,pos.y+4);ctx.restore();$('#explored').textContent=Math.min(100,Math.round(world.discovered.size/(Math.PI*(3100*1.05/150)**2)*100))+'% EXPLORADO';}
 class Arcade extends Phaser.Scene{
  constructor(){super('arcade');}
  init(data){this.kind=data.kind;}
@@ -165,7 +217,8 @@ class Arcade extends Phaser.Scene{
  update(time,delta){if(this.ended||modalOpen)return;const dt=Math.min(delta,35)/1000;this.elapsed+=dt;this.status.setText(`MATES ${state.mates} / 3   ${Math.max(0,Math.ceil(this.limit-this.elapsed))} S`);if(this.elapsed>this.limit){this.hit();if(!this.ended)this.finish(false,'Se terminó el tiempo. Gastaste un mate, pero podés volver a intentar el desafío.');return;}const input=this.activeInput();if(this.kind==='breakout')this.breakoutUpdate(dt,input);else if(this.kind==='maze')this.mazeUpdate(dt,input);else this.shooterUpdate(dt,input);this.fx.clear();for(const e of this.effects){e.life-=dt;this.fx.lineStyle(2,0xf1ce7c,e.life/.3);this.fx.strokeCircle(e.x,e.y,(.3-e.life)*70);}this.effects=this.effects.filter(e=>e.life>0);}
 }
 window.game=new Phaser.Game({type:Phaser.AUTO,parent:'game',width:W,height:H,pixelArt:true,roundPixels:true,backgroundColor:'#111b28',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[BuenosAires,Arcade],audio:{noAudio:true}});
-$('#start').onclick=()=>{started=true;$('#intro').classList.add('hidden');toast('¡Dale, che! Seguí el camino celeste hasta la primera terminal. Espacio: corrés.');save();};
+$('#start').onclick=()=>{started=true;$('#intro').classList.add('hidden');sync();world.findRoute();world.paintNavigation();save();};
+$('#street-interact').onclick=()=>{if(state.mates===0&&state.thermos&&state.yerba)brew();else world?.interact();};$('#walk-cancel').onclick=()=>world?.stopWalking();
 $('#brew').onclick=()=>{if(started&&!arcade&&!modalOpen)brew();};$('#map-button').onclick=toggleMap;$('#map-close').onclick=toggleMap;$('#radar-expand').onclick=toggleMap;
 $('#sound').onclick=()=>{soundOn=!soundOn;$('#sound').textContent='SONIDO: '+(soundOn?'ON':'OFF');$('#sound').setAttribute('aria-pressed',String(soundOn));beep();};
 $('#fullscreen').onclick=()=>{const panel=$('.arcade');if(document.fullscreenElement)document.exitFullscreen?.();else panel.requestFullscreen?.().catch(()=>toast('Este navegador no permite pantalla completa.'));};

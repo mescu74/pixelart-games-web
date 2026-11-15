@@ -1,4 +1,4 @@
-# Buenos Aires Invadida — Pixel Art 03
+# Buenos Aires Invadida — Calles 04
 
 Aventura pixel art en Phaser 3.90.0. Abrir mediante un servidor HTTP (el JSON geográfico requiere HTTP):
 
@@ -39,6 +39,7 @@ node --check game.js
 node --check core.js
 node scripts/check.cjs
 node scripts/check-assets.cjs
+node scripts/check-navigation.cjs
 ```
 
 Las pruebas verifican las cinco rutas con obstáculos, los bloqueos de progresión, la economía de mates, guardados inválidos y nombres de avenidas. También se verificó movimiento por las cinco rutas en Phaser y los estados de derrota, recuperación y victoria dentro del navegador.
@@ -67,3 +68,22 @@ python3 -m http.server 8765 --bind 127.0.0.1
 ```
 
 La referencia visual enviada se usó para orientar el estilo de contornos, paleta y lectura arcade; no se incluyeron recortes, trazados ni imágenes de stock.
+
+
+## Calles más claras — rama `feat/clear-street-exploration`
+
+La exploración usa una cámara más cercana, calles y veredas contrastadas, pasos peatonales y marca «VOS». La ruta celeste avanza desde la posición real sobre cada tramo de calle, sin regresar al nodo previo. El cartel indica por dónde seguir ahora y anuncia el próximo giro; la distancia corresponde al recorrido por calles, no a una línea recta a través de los bloqueos.
+
+Podés hacer clic o tocar una calle para caminar hasta esa marca. El personaje recorre la red de calles y respeta autos chocados y cercos. WASD, las flechas, Esc o el botón × cancelan la caminata; abrir el mapa o un diálogo también la detiene. Llegar no inicia automáticamente el arcade: el poste dorado y el botón «Entrar» permiten elegir cuándo jugar.
+
+Si no quedan mates, la guía busca primero las provisiones que faltan. Cuando hay un termo y una yerba, muestra el botón «Cebar un mate»; después vuelve a la misión. Los cuatro homenajes arcade y la nave nodriza conservan sus reglas y gráficos anteriores.
+
+Las pruebas de navegación verifican los cinco recorridos completos, el progreso hacia adelante, indicaciones de giro y bloqueos sobre un mismo tramo de calle. En Phaser también se verificaron la caminata con clic, la recuperación desde cero mates, el botón de llegada y la desaparición del cartel de calle al entrar al arcade. El guardado usa la misma clave y sigue siendo compatible con la versión anterior.
+
+Para probar esta iteración:
+
+```sh
+git fetch origin
+git switch feat/clear-street-exploration
+python3 -m http.server 8765 --bind 127.0.0.1
+```
