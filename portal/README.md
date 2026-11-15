@@ -61,3 +61,14 @@ Los tests del portal verifican autenticación, CSRF, validación de ZIP, subida,
 ## Datos y backups
 
 El volumen contiene SQLite (WAL), paquetes/versiones, portadas y secretos locales. Para un backup coherente usar el backup online de SQLite o detener este contenedor y copiar `/data`; no respaldar solo el archivo principal mientras hay escrituras. Ningún backup externo o restauración se considera configurado por este MVP. Conservar este volumen en despliegues y rollback; no borrarlo para actualizar código.
+
+## Google Analytics 4
+
+- Cuenta Thxuweb `406221052`; propiedad Pixel Sur Arcade `564443692`; flujo Web `16347253840`.
+- ID público de medición: `G-R5P1YY93LP`, dominio games.soloescus.com. Propiedad separada de ThxuLab.
+- Consentimiento básico: Google no carga hasta aceptar estadísticas; se puede rechazar o revocar en «Privacidad». Elección local por 180 días. Sin señales de Google ni personalización publicitaria.
+- `page_view`: páginas públicas, sin query strings ni fragmentos; referente reducido al dominio. `game_open`: apertura válida del reproductor, con game_id y game_name. No afirma medir partidas empezadas ni completadas.
+- Se excluyen /admin, previews y los iframes de los juegos; no se envían claves ni partidas guardadas.
+- No agregar etiquetas a los ZIP de juegos: la medición vive en el portal. Medición mejorada de GA4 desactivada, para evitar recogida automática adicional.
+- `npm test` cubre aceptación, rechazo, expiración, exclusión admin/iframe, revocación y no duplicar game_open.
+- Informes: https://analytics.google.com/analytics/web/#/a406221052p564443692/reports/intelligenthome
