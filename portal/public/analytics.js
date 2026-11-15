@@ -14,6 +14,7 @@ function activate(){
  if(!loaded){loaded=true;window.dataLayer=window.dataLayer||[];window.gtag=function(){window.dataLayer.push(arguments);};
  window.gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
  window.gtag('consent','update',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+ window.gtag('set',{send_page_view:false,page_location:location.origin+location.pathname,page_referrer:referrer(),allow_google_signals:false,allow_ad_personalization_signals:false});
  window.gtag('js',new Date());window.gtag('config',ID,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,page_location:location.origin+location.pathname,page_referrer:referrer(),cookie_domain:'games.soloescus.com',cookie_flags:'SameSite=Lax;Secure'});
  const s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id='+ID;s.id='pixel-sur-ga';document.head.append(s);
  }else window.gtag('consent','update',{analytics_storage:'granted'});
