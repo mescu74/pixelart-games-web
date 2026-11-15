@@ -1,0 +1,7 @@
+Street geometry: © OpenStreetMap contributors, Open Database License 1.0 (ODbL).
+https://www.openstreetmap.org/copyright
+https://opendatacommons.org/licenses/odbl/1-0/
+Source dataset: https://github.com/alephcero/bsas_urban_area_streets (snapshot 2018-06), imported by the BA Invaders project.
+The derived database is distributed as map.json under ODbL 1.0; the preprocessing source is build-map.py in the source repository.
+https://github.com/mescu74/pixelart-games-web
+The visual buildings, vehicle sprites, landmarks and arcade behavior are original artistic interpretation. Road directions and traffic regulations are not reproduced. This is not a current navigation map.

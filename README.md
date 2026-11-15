@@ -108,3 +108,7 @@ python3 -m http.server 8765 --bind 127.0.0.1
 Segundo juego del portal: shooter espacial con naves y enemigos originales, tres sectores, tres jefes y vidas de mate. Sin termos ni yerba. [Fuente y controles](games/orbita-sur/README.md).
 
 Publicado en https://games.soloescus.com/jugar/orbita-sur desde el panel del portal; su paquete se conserva en el volumen persistente. `python3 scripts/package-orbita.py` genera el ZIP. Las nuevas vidas de los juegos de Pixel Sur se representan siempre como mates (ver `games/AGENTS.md`).
+
+## Fuga Porteña
+
+Tercer juego de Pixel Sur Arcade: persecuciones con moto por geometría real del centro porteño, 95 botines, bolsas de dinero, patrulleros propios y vidas de mate. [Fuente, controles y atribución cartográfica](games/fuga-portena/README.md). Paquete: `python3 scripts/package-fuga.py`. Publicación: https://games.soloescus.com/jugar/fuga-portena
