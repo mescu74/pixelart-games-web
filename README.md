@@ -1,3 +1,18 @@
+# Pixel Sur Arcade · BA Invaders
+
+Portal de juegos pixel art con catálogo, favoritos, reproductor y publicación desde administración. Primer juego: **BA Invaders**.
+
+[Instrucciones del portal y despliegue en Coolify](portal/README.md).
+
+```sh
+node portal/package-game.mjs
+npm start
+```
+
+Abrir http://127.0.0.1:3000. La documentación del prototipo de juego independiente queda a continuación.
+
+---
+
 # Buenos Aires Invadida — Calles 04
 
 Aventura pixel art en Phaser 3.90.0. Abrir mediante un servidor HTTP (el JSON geográfico requiere HTTP):

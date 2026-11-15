@@ -1,0 +1,14 @@
+{
+  "name": "pixel-sur-arcade",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node portal/server.mjs",
+    "test": "node --test portal/test/*.test.mjs",
+    "test:game": "node scripts/check.cjs && node scripts/check-assets.cjs && node scripts/check-navigation.cjs",
+    "prepare:game": "node portal/package-game.mjs"
+  }
+}

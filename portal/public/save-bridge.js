@@ -1,0 +1,5 @@
+/* Opaque-origin games get only their own save namespace, never portal cookies/storage. */
+(()=>{const values=Object.assign(Object.create(null),window.__pixelSurSeed||{});delete window.__pixelSurSeed;
+const persist=()=>{if(JSON.stringify(values).length>1000000)return;parent.postMessage({type:'pixel-sur-save',values:{...values}},'*');};
+const store={get length(){return Object.keys(values).length;},key(i){return Object.keys(values)[i]??null;},getItem(k){return Object.hasOwn(values,String(k))?values[String(k)]:null;},setItem(k,v){k=String(k);v=String(v);if(k.length>200||v.length>900000||Object.keys(values).length>=100&&!Object.hasOwn(values,k))throw new DOMException('Límite del guardado','QuotaExceededError');values[k]=v;persist();},removeItem(k){delete values[String(k)];persist();},clear(){Object.keys(values).forEach(k=>delete values[k]);persist();}};
+Object.defineProperty(window,'localStorage',{configurable:false,value:store});document.documentElement.classList.add('portal-embed');})();

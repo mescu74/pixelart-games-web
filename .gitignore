@@ -5,3 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+portal/data/
+portal/bundled/
+portal/test-output/
+*.sqlite*
