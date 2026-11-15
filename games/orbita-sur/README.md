@@ -32,3 +32,11 @@ La tipografía es Barlow Condensed / Space Mono de Google Fonts, con fallback lo
 - Probar además el paquete real en `/admin/probar/orbita-sur`, publicar y abrir desde el catálogo.
 
 Phaser se distribuye con su licencia MIT en PHASER-LICENSE.txt. Arte, encuentros y efectos de sonido son propios de este proyecto.
+
+## Edición 02: reactores activos
+
+Sprites de 48 px para naves y 96 px para jefes, con seis frames por modelo (42 frames originales). Nuevas siluetas de portanaves, Tejedora de seis brazos y fortaleza radial; paneles, rejillas, cabina y conductos. Reactores giratorios, motores, destellos de boca, impactos, fragmentos y explosiones encadenadas al destruir jefes. El cinturón incluye asteroides por parallax.
+
+Los jefes cargan un rayo durante 1,15 segundos sobre una columna marcada antes de disparar; el pulso cancela tanto el rayo como los proyectiles. La fase crítica avisa al caer por debajo del 45 % de salud. El estado visual se congela durante la pausa. Se conservan las cinco vidas de mate y el namespace del récord existente.
+
+Validación: siete sheets de seis cuadros; rayo anunciado sin daño, rayo activo con daño, cancelación por pulso, congelación al pausar, tres destrucciones encadenadas, victoria, derrota, reinicio limpio y viewport táctil de 390 px sin overflow.
