@@ -1,0 +1,122 @@
+{
+  "hero": {
+    "width": 32,
+    "height": 32,
+    "frames": 4
+  },
+  "alien": {
+    "width": 32,
+    "height": 32,
+    "frames": 2
+  },
+  "alien-green": {
+    "width": 32,
+    "height": 32,
+    "frames": 2
+  },
+  "ship": {
+    "width": 32,
+    "height": 32,
+    "frames": 2
+  },
+  "saucer": {
+    "width": 32,
+    "height": 32,
+    "frames": 4
+  },
+  "drone": {
+    "width": 32,
+    "height": 32,
+    "frames": 4
+  },
+  "mate": {
+    "width": 32,
+    "height": 32,
+    "frames": 2
+  },
+  "mate-empty": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "thermos": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "yerba": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "taxi": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "wreck": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "bus": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "tree": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "terminal": {
+    "width": 32,
+    "height": 32,
+    "frames": 4
+  },
+  "explosion": {
+    "width": 32,
+    "height": 32,
+    "frames": 6
+  },
+  "bullet": {
+    "width": 32,
+    "height": 32,
+    "frames": 2
+  },
+  "plasma": {
+    "width": 32,
+    "height": 32,
+    "frames": 2
+  },
+  "brick": {
+    "width": 32,
+    "height": 32,
+    "frames": 1
+  },
+  "obelisk": {
+    "width": 80,
+    "height": 144,
+    "frames": 1
+  },
+  "congress": {
+    "width": 128,
+    "height": 96,
+    "frames": 1
+  },
+  "colon": {
+    "width": 128,
+    "height": 96,
+    "frames": 1
+  },
+  "san-martin": {
+    "width": 96,
+    "height": 80,
+    "frames": 1
+  },
+  "gran-rex": {
+    "width": 96,
+    "height": 80,
+    "frames": 1
+  }
+}
