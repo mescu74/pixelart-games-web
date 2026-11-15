@@ -11,6 +11,8 @@
     "test:game": "node scripts/check.cjs && node scripts/check-assets.cjs && node scripts/check-navigation.cjs",
     "prepare:game": "node portal/package-game.mjs",
     "test:rosada": "node --test games/gorilas-en-la-rosada/core.test.cjs",
-    "package:rosada": "node games/gorilas-en-la-rosada/package.mjs"
+    "package:rosada": "node games/gorilas-en-la-rosada/package.mjs",
+    "test:alas": "node --test games/alas-del-sur/test/core.test.cjs",
+    "package:alas": "node games/alas-del-sur/package.mjs"
   }
 }

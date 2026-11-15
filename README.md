@@ -4,6 +4,8 @@ Portal de juegos pixel art con catálogo, favoritos, reproductor y publicación 
 
 [Instrucciones del portal y despliegue en Coolify](portal/README.md).
 
+**[Alas del Sur · Atlántico 82](games/alas-del-sur/README.md)**: Pucará y Mirage elegibles, tres misiones aéreas/navales y vidas de mate. `npm run test:alas` y `npm run package:alas`.
+
 **Nuevo: [Gorilas en la Rosada](games/gorilas-en-la-rosada/README.md)**. Plataformas originales, tres ascensos, caricatura política y vidas de mate. Código del juego, arte reproducible, portada y pruebas en `games/gorilas-en-la-rosada/`.
 
 ```sh

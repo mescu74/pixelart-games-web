@@ -1,0 +1,6 @@
+// Test driver: chooses ordinary movement, bomb and roll inputs. Does not edit game state.
+function pilot(s,memory){const p=s.player;let aim=288,goalY=650;if(s.boss){const b=s.boss;aim=288+Math.sin((b.age+.75)*.55)*(s.stage===2?74:115);}else{const naval=s.enemies.filter(e=>e.type==='boat'&&e.y>0).sort((a,b)=>b.y-a.y)[0],air=s.enemies.filter(e=>e.y>10&&e.y<600).sort((a,b)=>b.y-a.y)[0],target=naval||air;if(target)aim=target.x;}
+let best=null;for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const speed=s.plane==='mirage'?330:260,px=Math.max(28,Math.min(548,p.x+dx*speed*.22)),py=Math.max(520,Math.min(710,p.y+dy*speed*.22));let cost=Math.abs(px-aim)*.6+Math.abs(py-goalY)*.5;if((dy<0&&p.y<=525)||(dy>0&&p.y>=705)||(dx<0&&p.x<=30)||(dx>0&&p.x>=546))cost+=300;for(const b of s.bullets){const d=Math.hypot(px-(b.x+b.vx*.28),py-(b.y+b.vy*.28));if(d<90)cost+=(90-d)*8;}if(best===null||cost<best.cost)best={cost,dx,dy};}
+const danger=s.bullets.some(b=>Math.hypot(b.x+b.vx*.14-p.x,b.y+b.vy*.14-p.y)<58),roll=danger&&p.cool<=0&&p.inv<.15;let bomb=false;if(s.bombs>0&&s.time-(memory.bombTime||-100)>5&&((danger&&p.cool>0&&p.inv<.15&&p.roll<=0)||(s.boss&&s.boss.hp<90)||(s.boss&&s.time>54&&s.bullets.length>18))){bomb=true;memory.bombTime=s.time;}
+return{left:best.dx<0,right:best.dx>0,up:best.dy<0,down:best.dy>0,roll,bomb};}
+module.exports=pilot;

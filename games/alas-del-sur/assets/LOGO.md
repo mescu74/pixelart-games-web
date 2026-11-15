@@ -1,6 +1,6 @@
 # Alas del Sur · Atlántico 82 — emblema
 
-Logo conceptual original: silueta pixel art de las Islas Malvinas con colores de la bandera argentina y sol dorado. PNG con fondo transparente, creado con la herramienta integrada imagegen. Este archivo prepara la identidad visual; el juego todavía no está implementado.
+Logo conceptual original: silueta pixel art de las Islas Malvinas con colores de la bandera argentina y sol dorado. PNG con fondo transparente, creado con la herramienta integrada imagegen. El juego utiliza el emblema en su pantalla de inicio y en la portada.
 
 Archivo: `logo-malvinas.png`.
 
