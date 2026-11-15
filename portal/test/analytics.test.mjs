@@ -22,3 +22,7 @@ test('acceptance loads once, sanitizes URLs, delays game event and supports revo
  const q=f.queue(),page=q.find(a=>a[1]==='page_view'),open=q.find(a=>a[1]==='game_open');assert(page&&open);assert.equal(page[2].page_location,'https://games.soloescus.com/jugar/fuga-portena');assert.equal(page[2].page_referrer,'https://example.org');assert.equal(open[2].game_id,'fuga-portena');assert(!JSON.stringify(q).includes('secret'));
  f.events['pixel-sur:game-open']({detail:{slug:'fuga-portena',title:'Fuga Porteña'}});assert.equal(f.queue().filter(a=>a[1]==='game_open').length,1);f.choose('denied');assert.equal(f.window['ga-disable-G-R5P1YY93LP'],true);f.choose('granted');assert.equal(f.scripts.length,1);
 });
+test('global defaults precede tag initialization; player page is measured only after game metadata loads',()=>{
+ const f=fixture({path:'/jugar/ba-invaders',stored:{value:'granted',at:Date.now()}}),q=f.queue();assert(q.findIndex(a=>a[0]==='set')<q.findIndex(a=>a[0]==='js'));assert.equal(q.find(a=>a[0]==='set')[1].send_page_view,false);assert(!q.some(a=>a[1]==='page_view'));
+ f.doc.title='BA Invaders · Pixel Sur Arcade';f.events['pixel-sur:game-open']({detail:{slug:'ba-invaders',title:'BA Invaders'}});const page=f.queue().find(a=>a[1]==='page_view');assert.equal(page[2].page_title,'BA Invaders · Pixel Sur Arcade');assert.equal(f.queue().filter(a=>a[1]==='page_view').length,1);
+});
