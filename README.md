@@ -4,6 +4,13 @@ Portal de juegos pixel art con catálogo, favoritos, reproductor y publicación 
 
 [Instrucciones del portal y despliegue en Coolify](portal/README.md).
 
+**Nuevo: [Gorilas en la Rosada](games/gorilas-en-la-rosada/README.md)**. Plataformas originales, tres ascensos, caricatura política y vidas de mate. Código del juego, arte reproducible, portada y pruebas en `games/gorilas-en-la-rosada/`.
+
+```sh
+npm run test:rosada
+npm run package:rosada
+```
+
 ```sh
 node portal/package-game.mjs
 npm start
