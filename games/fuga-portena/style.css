@@ -4,3 +4,5 @@
 /* Keep the HUD on screen inside the portal's shorter iframe. */
 html,body{height:100%;overflow:hidden}main{height:100dvh;display:flex;flex-direction:column}header{flex-shrink:0}.layout{flex:1;min-height:0;overflow:hidden;padding-bottom:0}.arena{height:100%;min-height:0}aside{min-height:0;overflow-y:auto;scrollbar-width:thin}footer{flex-shrink:0;min-height:24px;align-items:center}
 @media(max-width:800px){.layout{grid-template-rows:minmax(0,1fr) auto}.arena{height:100%;min-height:0}aside{overflow:visible;min-height:55px}footer{min-height:18px}}
+
+#nitro{color:#bce5b0;border-color:#628577;min-width:92px}#nitro:disabled{opacity:.45;cursor:default}@media(max-width:800px){header{gap:8px}.brand{font-size:19px}.brand small{font-size:5px}#nitro{min-width:55px;font-size:6px;padding:7px 3px}header small{font-size:7px}header button{padding:7px 5px}#lives{gap:1px}#lives img{height:17px}.score strong{font-size:17px}}

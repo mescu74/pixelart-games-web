@@ -25,3 +25,15 @@ Desde la raíz: `python3 -m http.server 3046`, abrir `/games/fuga-portena/`.
 Validación del MVP: navegador con teclado, recolección, botones táctiles, cámara/vista general y 390×844 sin desbordamiento; diagnóstico local acelerado de botín único, captura/invulnerabilidad, mate, bolsa, trompo, pausa, expiración, tres rondas, victoria/derrota y reinicio. No equivale a completar manualmente las tres rondas. Publicación mediante panel/API autenticada; probar el paquete en el sandbox antes de publicarlo.
 
 Ver PHASER-LICENSE.txt y MAP-LICENSE.txt. La base derivada está incluida en map.json bajo ODbL; arte original del proyecto Pixel Sur Arcade.
+
+## Edición 02 — Persecuciones
+
+Moto y patrullero originales de 48×64 px, con ocho cuadros cada uno: ruedas/suspensión, casco y reflejos, carrocería, cristales, espejos y balizas. Giros visuales suavizados sin salir de la geometría del grafo, sombras, humo, marcas de frenada, estela de nitro y luces de patrullero.
+
+- Nitro: N / Shift o botón visible. Dura 1,15 s, velocidad 190 frente a 132 normal, recarga 6 s. No da invulnerabilidad y se cancela al reaparecer.
+- Racha: cinco botines consecutivos, con menos de 2,1 s entre recogidas, dan +25. Se repite cada cinco.
+- Escape cercano: entrar en el radio de proximidad de un patrullero sin poder ni invulnerabilidad, luego salir a más de 80 px, da +30 y reduce 1,5 s de recarga. Se reinicia por patrullero; captura y bolsas cancelan la proximidad.
+- Si bolsa y patrullero coinciden en un tick, se recoge primero la bolsa.
+- Se conservan map.json byte a byte, los 501 nodos/532 aristas reales, tres mates, tres rondas y namespace de récord.
+
+Pruebas: animaciones de ocho frames, nitro/repetición/recarga/pausa, rachas, escape, colisión simultánea con bolsa, victoria, derrota y reinicio. Móvil 390×844: HUD y botón nitro visibles, sin overflow. Diagnósticos acelerados solo en la instancia local, sin alterar récords públicos.
