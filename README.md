@@ -1,4 +1,4 @@
-# Buenos Aires Invadida — MVP 02
+# Buenos Aires Invadida — Pixel Art 03
 
 Aventura pixel art en Phaser 3.90.0. Abrir mediante un servidor HTTP (el JSON geográfico requiere HTTP):
 
@@ -38,6 +38,7 @@ Fuente: [alephcero/bsas_urban_area_streets](https://github.com/alephcero/bsas_ur
 node --check game.js
 node --check core.js
 node scripts/check.cjs
+node scripts/check-assets.cjs
 ```
 
 Las pruebas verifican las cinco rutas con obstáculos, los bloqueos de progresión, la economía de mates, guardados inválidos y nombres de avenidas. También se verificó movimiento por las cinco rutas en Phaser y los estados de derrota, recuperación y victoria dentro del navegador.
@@ -47,3 +48,22 @@ Las pruebas verifican las cinco rutas con obstáculos, los bloqueos de progresi�
 ## Próximas iteraciones
 
 Ajustar dificultad y legibilidad con una primera partida humana, ampliar animaciones y personalidad del protagonista, ilustrar más fachadas porteñas, sumar vecinos y diálogos, y reemplazar el snapshot geográfico por un dato más reciente si cambia el alcance. El MVP corre localmente, sin backend ni publicación externa.
+
+
+## Assets originales — rama de prueba
+
+Esta versión incorpora 24 sprites/sheets originales (47 fotogramas), fuente bitmap 5×7 y mates propios en el HUD. Incluye caminata del protagonista, naves y aliens animados, explosiones de seis fotogramas, proyectiles, terminales, provisiones, taxis, colectivos y cinco monumentos/teatros. Los sprites del laberinto y los bloques también usan el nuevo conjunto. El trazado, los objetivos, las colisiones y el guardado se mantienen compatibles con el MVP anterior.
+
+![Assets propios de Sur Arcade](assets/contact-sheet.png)
+
+El generador reproducible es `scripts/generate-assets.py`. Se necesita Pillow solo para regenerar los PNG, no para jugar. Ver [documentación de los assets](assets/README.md).
+
+Prueba de esta rama:
+
+```sh
+git fetch origin
+git switch feat/original-pixel-assets
+python3 -m http.server 8765 --bind 127.0.0.1
+```
+
+La referencia visual enviada se usó para orientar el estilo de contornos, paleta y lectura arcade; no se incluyeron recortes, trazados ni imágenes de stock.
