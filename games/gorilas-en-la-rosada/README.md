@@ -27,3 +27,5 @@ node games/gorilas-en-la-rosada/package.mjs
 ZIP en `portal/bundled/gorilas-en-la-rosada.zip` (ignorado por Git). Subir con portada `cover.png` desde `/admin`, probar el borrador y publicar. El servidor y los otros juegos no requieren despliegue ni cambios de configuración.
 
 Las pruebas de lógica verifican las tres rutas hasta la victoria sin obstáculos para aislar conectividad; aparte verifican saltos, impactos, invulnerabilidad, derrota, checkpoint, recarga, saludo y caída de los tres tipos de objetos. No equivalen a completar una campaña humana ni certifican la dificultad.
+
+Validación de publicación: campaña completa de tres ascensos mediante entrada de teclado automatizada en navegador, sin alterar física ni mates; victoria final con un mate. Inicio, movimiento, sonido y pausa verificados en el sandbox del portal, y movimiento táctil verificado en la versión pública a 390 px. Consolas sin errores durante esas pruebas.
