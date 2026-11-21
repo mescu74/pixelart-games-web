@@ -18,4 +18,7 @@ const torino=path.join(root,'portal/games/torino-austral'),torinoOut=path.join(r
 await rm(torinoOut,{recursive:true,force:true});await mkdir(path.join(torinoOut,'public'),{recursive:true});
 for(const name of ['index.html','game.js','landscape.png'])await cp(path.join(torino,name),path.join(torinoOut,name));
 await cp(path.join(torino,'landscape.png'),path.join(torinoOut,'public','landscape.png'));
-console.log('Bundled BA Invaders, Salto del Sur, Mudanza Porteña and Torino Austral with original pixel art.');
+const cruce=path.join(root,'portal/games/cruce-porteno'),cruceOut=path.join(root,'portal/bundled/cruce-porteno');
+await rm(cruceOut,{recursive:true,force:true});await mkdir(path.join(cruceOut,'public'),{recursive:true});
+for(const name of ['index.html','game.js'])await cp(path.join(cruce,name),path.join(cruceOut,name));
+console.log('Bundled BA Invaders, Salto del Sur, Mudanza Porteña, Torino Austral and Cruce Porteño with original pixel art.');
