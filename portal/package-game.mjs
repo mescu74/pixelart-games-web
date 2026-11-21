@@ -14,4 +14,8 @@ const puzzle=path.join(root,'portal/games/mudanza-portena'),puzzleOut=path.join(
 await rm(puzzleOut,{recursive:true,force:true});await mkdir(path.join(puzzleOut,'public'),{recursive:true});
 for(const name of ['index.html','game.js','scene.png'])await cp(path.join(puzzle,name),path.join(puzzleOut,name));
 await cp(path.join(puzzle,'scene.png'),path.join(puzzleOut,'public','scene.png'));
-console.log('Bundled BA Invaders, Salto del Sur and Mudanza Porteña with original pixel art.');
+const torino=path.join(root,'portal/games/torino-austral'),torinoOut=path.join(root,'portal/bundled/torino-austral');
+await rm(torinoOut,{recursive:true,force:true});await mkdir(path.join(torinoOut,'public'),{recursive:true});
+for(const name of ['index.html','game.js','landscape.png'])await cp(path.join(torino,name),path.join(torinoOut,name));
+await cp(path.join(torino,'landscape.png'),path.join(torinoOut,'public','landscape.png'));
+console.log('Bundled BA Invaders, Salto del Sur, Mudanza Porteña and Torino Austral with original pixel art.');
