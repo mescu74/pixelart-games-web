@@ -41,6 +41,8 @@ Las subidas deben ser juegos propios o contar con las licencias correspondientes
 
 El catálogo incluye **Lola y Pipo: Salto del Sur**, una aventura de plataformas 16-bit original, empaquetada desde `portal/games/salto-del-sur` durante la construcción de la imagen. Sus protagonistas, portada y escenarios son arte pixel propio; el juego conserva las vidas de mate y registra el puntaje final en el ranking cuando se gana.
 
+También incluye **Mudanza Porteña**, un rompecabezas arcade original con ambientación de San Telmo, piezas de cajas y muebles, rescates de mate y arte pixel propio. Las fichas de juego permiten votar anónimamente de 1 a 5 estrellas; se guarda un voto por navegador y puede cambiarse más adelante.
+
 - Cuenta: ThxuLab - Olabox; proyecto Growza; entorno dev.
 - Servidor existente: manolo memory.
 - Estrategia: Dockerfile, ubicación `/Dockerfile`, puerto interno 3000.

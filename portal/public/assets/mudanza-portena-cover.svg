@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 320 180" shape-rendering="crispEdges">
+<defs><linearGradient id="shade" x2="0" y2="1"><stop stop-color="#091921" stop-opacity=".04"/><stop offset=".58" stop-color="#0b1b21" stop-opacity=".23"/><stop offset="1" stop-color="#07151b" stop-opacity=".9"/></linearGradient><pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 3.5h4" stroke="#06141b" stroke-opacity=".15"/></pattern></defs>
+<image href="/files/mudanza-portena/builtin/public/scene.png" x="0" y="0" width="320" height="180" preserveAspectRatio="xMidYMid slice"/>
+<path fill="#0c1e25" fill-opacity=".76" d="M9 10h190v43H9z"/><path fill="#f0c777" d="M17 17h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4zm7 0h4v4h-4z"/>
+<text x="17" y="34" fill="#ffe4a1" font-family="monospace" font-size="10" font-weight="bold" letter-spacing=".5">MUDANZA</text><text x="17" y="47" fill="#9fe0d0" font-family="monospace" font-size="10" font-weight="bold" letter-spacing=".7">PORTEÑA</text>
+<path fill="#172a31" fill-opacity=".87" d="M101 117h102v40H101z"/><path fill="#d7aa69" d="M101 117h102v4H101z"/><path fill="#bd754b" d="M111 130h20v20h-20z"/><path fill="#f2c984" d="M113 132h16v3h-16zm0 4h3v12h-3z"/><path fill="#4b8c8a" d="M137 125h22v22h-22z"/><path fill="#9be1ce" d="M139 127h18v3h-18zm0 4h3v14h-3z"/><path fill="#bd754b" d="M165 134h20v20h-20z"/><path fill="#f2c984" d="M167 136h16v3h-16zm0 4h3v12h-3z"/>
+<path fill="url(#shade)" d="M0 0h320v180H0z"/><path fill="url(#scan)" d="M0 0h320v180H0z"/><path fill="none" stroke="#e4c080" stroke-width="1" d="M3 3h314v174H3z"/>
+</svg>
