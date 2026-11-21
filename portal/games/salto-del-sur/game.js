@@ -6,7 +6,7 @@ const keys=new Set(),platforms=[{x:0,y:187,w:500,h:38},{x:540,y:181,w:330,h:44},
 for(const p of platforms) if(p.w>150) for(let i=70;i<p.w-25;i+=88) platforms.push({x:p.x+i,y:p.y-25-(i%3)*8,w:44,h:9,small:true});
 const world=5700,finish=5530, collectibles=[];for(let x=190;x<world-180;x+=155)collectibles.push({x,y:120-(x%3)*7,got:false,bob:x%17});
 let player, enemies, shots, camera=0,frame=0,score=0,mates=3,state='title',paused=false,mounted=false,last=0,flash=0;
-function reset(){player={x:38,y:140,vx:0,vy:0,w:13,h:22,on:false,face:1,inv:0};enemies=[{x:650,dir:1},{x:1110,dir:-1},{x:1660,dir:1},{x:2250,dir:-1},{x:2910,dir:1},{x:3450,dir:-1},{x:3980,dir:1},{x:4590,dir:-1},{x:5100,dir:1}].map(e=>({...e,y:(platforms.find(p=>e.x>=p.x&&e.x<p.x+p.w)?.y||185)-17,alive:true}));shots=[];collectibles.forEach(o=>o.got=false);camera=0;score=0;mates=3;mounted=false;frame=0;flash=0;state='playing';ui.overlay.classList.add('hidden');hud()}
+function reset(){player={x:78,y:140,vx:0,vy:0,w:13,h:22,on:false,face:1,inv:0};enemies=[{x:650,dir:1},{x:1110,dir:-1},{x:1660,dir:1},{x:2250,dir:-1},{x:2910,dir:1},{x:3450,dir:-1},{x:3980,dir:1},{x:4590,dir:-1},{x:5100,dir:1}].map(e=>({...e,y:(platforms.find(p=>e.x>=p.x&&e.x<p.x+p.w)?.y||185)-17,alive:true}));shots=[];collectibles.forEach(o=>o.got=false);camera=0;score=0;mates=3;mounted=false;frame=0;flash=0;state='playing';ui.overlay.classList.add('hidden');hud()}
 function hud(){ui.mates.textContent='MATES '+'♥'.repeat(mates)+'♡'.repeat(3-mates);ui.score.textContent='PUNTOS '+String(score).padStart(5,'0');ui.mount.textContent='PIPO: '+(mounted?'MONTADOS':'LISTO')}
 function rect(x,y,w,h,col){ctx.fillStyle=col;ctx.fillRect(Math.round(x),Math.round(y),w,h)}
 function box(x,y,w,h,col,edge='#172634'){rect(x,y,w,h,edge);rect(x+1,y+1,w-2,h-2,col)}
@@ -15,7 +15,7 @@ function bg(){let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#203758'
  if(panorama.complete&&panorama.naturalWidth){const tile=760,h=253,off=-((camera*.17)%tile);for(let x=off-tile;x<W+tile;x+=tile)ctx.drawImage(panorama,x,0,tile,h);}
  else {rect(305-camera*.08%440,32,24,24,'#ffe1a1');cloud(45-camera*.1%460,36,1);cloud(230-camera*.07%460,53,.75);cloud(340-camera*.11%490,25,.65);for(let layer=0;layer<3;layer++){let span=130+layer*48,off=-(camera*(.13+layer*.12))%span;for(let x=off-span;x<W+span;x+=span){let base=132+layer*17;rect(x,base,span,80,['#ad7380','#765d72','#4d6066'][layer]);rect(x+span*.3,base-28-layer*5,span*.35,32+layer*5,['#ad7380','#765d72','#4d6066'][layer]);rect(x+span*.6,base-16,span*.24,20,['#ad7380','#765d72','#4d6066'][layer]);}}}
  // A distant stone beacon marks the goal while the hills drift behind it.
- let bx=(276-camera*.18%W+W)%W;rect(bx,85,17,58,'#947a70');rect(bx-4,79,25,9,'#d6a17c');rect(bx+5,70,7,10,'#f5d18b');rect(bx+7,59,3,12,'#fff0b7');rect(bx+2,99,4,8,'#273a45');rect(bx+10,99,4,8,'#273a45');
+ let bx=(276-camera*.18%W+W)%W;rect(bx+4,119,7,23,'#9a7c6c');rect(bx+2,116,11,4,'#d0aa7f');rect(bx+4,109,7,7,'#c99d76');rect(bx+5,105,5,4,'#e8c387');rect(bx+6,96,3,9,'#fff0b8');rect(bx+5,125,2,5,'#f4d295');
  // Wind sprites and tiny fireflies add motion to the valley.
  for(let i=0;i<12;i++){const x=(i*43-camera*.28+W*3)%(W+8),y=112+(i*29%58);const flick=(frame+i*7)%26<13;rect(x,y,2,2,flick?'#fff0ae':'#f1b982');if(flick)rect(x-2,y,6,1,'#f5dfa0');}
 }
