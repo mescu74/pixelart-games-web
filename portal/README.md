@@ -21,7 +21,7 @@ Abrir http://127.0.0.1:3000. La primera ejecución crea una clave fuerte de admi
 - ZIP hasta 40 MB; contenido descomprimido hasta 200 MB/3.000 archivos, con `index.html` en raíz o una sola carpeta. Valida rutas, duplicados, enlaces, extensiones y compresión; no ejecuta contenido en el servidor.
 - Persistencia SQLite y archivos bajo `PORTAL_DATA_DIR` (por defecto `portal/data`; `/data` en Docker).
 - Sesión HttpOnly/SameSite Strict; CSRF y verificación de origen; limitación de intentos de login.
-- Los juegos se ejecutan en un iframe con origen opaco, sin `allow-same-origin`. Un puente de localStorage preserva solo el espacio de guardado de ese juego; no concede acceso a cookies ni datos del portal. Los assets del juego permiten CORS sin credenciales. Los borradores usan URLs de preview firmadas y temporales.
+- Los juegos se ejecutan en un iframe con origen opaco, sin `allow-same-origin`. Un puente de localStorage preserva solo el espacio de guardado de ese juego; no concede acceso a cookies ni datos del portal. La política CSP del juego restringe scripts, estilos, recursos y conexiones al origen del portal (más `data:`/`blob:` donde hace falta para el juego); no se permiten conexiones externas. Los assets del juego permiten CORS sin credenciales. Los borradores usan URLs de preview firmadas y temporales.
 - El bridge cubre la API localStorage habitual (`getItem/setItem/removeItem/clear/key/length`); juegos que dependan de IndexedDB, service workers, cookies o acceso directo al DOM del portal requieren adaptación. No ofrece subida pública ni cuentas de creadores en este MVP.
 
 ## Publicar un juego
@@ -32,7 +32,7 @@ Abrir http://127.0.0.1:3000. La primera ejecución crea una clave fuerte de admi
 4. Guardar borrador y abrir «Probar».
 5. Publicar cuando el juego funcione. Una nueva subida deja esa ficha en borrador hasta republicarla.
 
-Las subidas deben ser juegos propios o contar con las licencias correspondientes. No incluir credenciales, archivos de servidor ni dependencias que requieran backend.
+Las subidas deben ser juegos propios o contar con las licencias correspondientes. No incluir credenciales, archivos de servidor, dependencias remotas ni servicios externos: el juego no puede conectarse a otros orígenes desde el sandbox.
 
 ## Coolify
 

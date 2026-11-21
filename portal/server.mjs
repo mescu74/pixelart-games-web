@@ -8,6 +8,8 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 const HERE=path.dirname(fileURLToPath(import.meta.url)),ROOT=path.dirname(HERE),PUBLIC=path.join(HERE,'public');
 const DATA=path.resolve(process.env.PORTAL_DATA_DIR||path.join(HERE,'data')),PORT=Number(process.env.PORT||3000),PROD=process.env.NODE_ENV==='production',ORIGIN=process.env.PUBLIC_ORIGIN||(PROD?'https://games.soloescus.com':`http://127.0.0.1:${PORT}`);
+const GAME_ORIGIN=new URL(ORIGIN).origin;
+const GAME_CSP=`sandbox allow-scripts allow-pointer-lock allow-downloads allow-modals allow-orientation-lock; default-src 'none'; script-src ${GAME_ORIGIN} 'unsafe-inline' 'unsafe-eval' blob: data:; style-src ${GAME_ORIGIN} 'unsafe-inline'; img-src ${GAME_ORIGIN} data: blob:; font-src ${GAME_ORIGIN} data:; media-src ${GAME_ORIGIN} data: blob:; connect-src ${GAME_ORIGIN}; worker-src ${GAME_ORIGIN} blob:; object-src 'none'; form-action 'none'; base-uri ${GAME_ORIGIN}; frame-src 'none'`;
 await mkdir(DATA,{recursive:true,mode:0o700});await mkdir(path.join(DATA,'games'),{recursive:true});await mkdir(path.join(DATA,'tmp'),{recursive:true});
 async function durableSecret(name,initial){const file=path.join(DATA,name);try{return(await readFile(file,'utf8')).trim();}catch(e){if(e.code!=='ENOENT')throw e;const v=initial||randomBytes(24).toString('base64url');await writeFile(file,v+'\n',{flag:'wx',mode:0o600});return v;}}
 const password=await durableSecret('admin-password.txt',process.env.ADMIN_PASSWORD),secret=await durableSecret('session-secret.txt'),salt=createHash('sha256').update(secret).digest(),passwordHash=scryptSync(password,salt,32);
@@ -57,7 +59,7 @@ async function handler(req,res){headers(res);const url=new URL(req.url,'http://l
   problem(405,'Acción no disponible.');
  }
  m=p.match(/^\/files\/([a-z0-9-]+)\/([a-z0-9]+)\/([a-zA-Z0-9.]+)\/(.+)$/);
- if(method==='GET'&&m){const[,slug,release,token,relative]=m,g=gameRow(slug);if(!g||(!g.published||g.release!==release)&&!validAccess(g,release,token))problem(404,'Juego no encontrado.');res.removeHeader('Content-Security-Policy');res.setHeader('Content-Security-Policy',"sandbox allow-scripts allow-pointer-lock allow-downloads allow-modals");return file(res,gameDirectory(g,release),relative,true);}
+ if(method==='GET'&&m){const[,slug,release,token,relative]=m,g=gameRow(slug);if(!g||(!g.published||g.release!==release)&&!validAccess(g,release,token))problem(404,'Juego no encontrado.');res.removeHeader('Content-Security-Policy');res.setHeader('Content-Security-Policy',GAME_CSP);return file(res,gameDirectory(g,release),relative,true);}
  m=p.match(/^\/covers\/([a-z0-9-]+)\/(cover\.(png|jpg|webp))$/);if(method==='GET'&&m){const g=gameRow(m[1]);if(!g?.published)problem(404,'Portada no encontrada.');return file(res,path.join(DATA,'games',m[1]),m[2]);}
  if(method==='GET'&&(p==='/jugar/ba-invaders'||/^\/jugar\/[a-z0-9-]+$/.test(p)||/^\/admin\/probar\/[a-z0-9-]+$/.test(p))){headers(res,true);return file(res,PUBLIC,'player.html');}
  if(method==='GET'&&p==='/admin')return file(res,PUBLIC,'admin.html');
