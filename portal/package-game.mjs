@@ -7,5 +7,5 @@ for(const name of ['index.html','style.css','game.js','core.js','assets.js','str
 const platformer=path.join(root,'portal/games/salto-del-sur');
 const platformerOut=path.join(root,'portal/bundled/salto-del-sur');
 await rm(platformerOut,{recursive:true,force:true});await mkdir(platformerOut,{recursive:true});
-for(const name of ['index.html','game.js','characters.png','pampas-background.png'])await cp(path.join(platformer,name),path.join(platformerOut,name));
+for(const name of ['index.html','game.js','characters-crisp.png','pampas-background.png'])await cp(path.join(platformer,name),path.join(platformerOut,name));
 console.log('Bundled BA Invaders and Salto del Sur with original pixel art.');
