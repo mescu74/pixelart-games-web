@@ -39,6 +39,8 @@ Las subidas deben ser juegos propios o contar con las licencias correspondientes
 
 ## Coolify
 
+El catálogo incluye **Lola y Pipo: Salto del Sur**, una aventura de plataformas 16-bit original, empaquetada desde `portal/games/salto-del-sur` durante la construcción de la imagen. Sus protagonistas, portada y escenarios son arte pixel propio; el juego conserva las vidas de mate y registra el puntaje final en el ranking cuando se gana.
+
 - Cuenta: ThxuLab - Olabox; proyecto Growza; entorno dev.
 - Servidor existente: manolo memory.
 - Estrategia: Dockerfile, ubicación `/Dockerfile`, puerto interno 3000.
