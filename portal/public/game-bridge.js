@@ -1,0 +1,1 @@
+(()=>{let last=0;const game=window.__pixelSurGame||{};Object.defineProperty(window,'PixelSurArcade',{configurable:false,writable:false,value:Object.freeze({submitScore(score){if(!Number.isSafeInteger(score)||score<0||score>999999999||Date.now()-last<1000)return false;last=Date.now();parent.postMessage({type:'pixel-sur-score',gameSlug:game.slug,score},'*');return true;}})});})();
