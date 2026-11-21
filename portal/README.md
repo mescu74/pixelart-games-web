@@ -46,7 +46,7 @@ Las subidas deben ser juegos propios o contar con las licencias correspondientes
 - Dominio previsto: `https://games.soloescus.com`.
 - Volumen persistente **obligatorio** en `/data`.
 - `PUBLIC_ORIGIN=https://games.soloescus.com`, `PORTAL_DATA_DIR=/data`, `NODE_ENV=production`.
-- `GOOGLE_CLIENT_ID` es el ID público de un cliente OAuth de tipo aplicación web. En Google Cloud, autorizar `https://games.soloescus.com` como origen JavaScript; no se usa ni se guarda un client secret.
+- `GOOGLE_CLIENT_ID` es el ID público del cliente OAuth Web `Pixel Sur Arcade - Google Login`, creado en el proyecto GCP `pixel-sur-arcade`. Su origen autorizado es `https://games.soloescus.com`; no se usa ni se guarda un client secret. El ID se configura como variable en Coolify, no en Git.
 - Healthcheck: `/api/health`; el Dockerfile ya define el chequeo.
 - No publicar el puerto de base de datos, el directorio de datos ni la clave de administración.
 
@@ -79,7 +79,8 @@ El volumen contiene SQLite (WAL), paquetes/versiones, portadas y secretos locale
 
 ## Cuentas y rankings
 
-- Crear un cliente OAuth web en Google Cloud Console y configurar `GOOGLE_CLIENT_ID` en Coolify. Hasta que exista ese ID, el portal muestra un estado de configuración pendiente y no acepta cuentas.
+- El proyecto OAuth separado es `pixel-sur-arcade` y el cliente Web `Pixel Sur Arcade - Google Login` ya está creado. Configurar su Client ID público como `GOOGLE_CLIENT_ID` en Coolify antes de desplegar.
+- La app OAuth está en estado `Testing`; sólo las cuentas añadidas como test users pueden iniciar sesión. Para permitir acceso público, publicar la app desde Google Auth Platform después de desplegar y comprobar las páginas `/privacidad` y `/terminos`. Google puede solicitar verificación de dominio y de la app según sus políticas vigentes.
 - El callback de Google Identity Services envía un ID token al servidor; el servidor valida audiencia y expiración con el endpoint de Google y crea una sesión propia HttpOnly. No se guarda el ID token ni el correo/nombre, y no se piden permisos de Drive, Gmail u otros servicios.
 - Juego anfitrión: use `window.PixelSurArcade.submitScore(12345)` al terminar partida. El sandbox devuelve el puntaje al portal; el portal pide login e iniciales antes de persistir la mejor marca del jugador para ese juego.
 - Puntajes de cliente pueden modificarse desde las herramientas del navegador. El portal valida identidad, origen, formato, rango y frecuencia, pero no ofrece antitrampas del lado del servidor; evitar premios con valor monetario sin validar cada juego.
