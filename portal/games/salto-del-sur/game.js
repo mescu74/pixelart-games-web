@@ -2,7 +2,7 @@
 const c=document.querySelector('#game'),ctx=c.getContext('2d'),W=400,H=225,ui={overlay:document.querySelector('#overlay'),title:document.querySelector('#title'),message:document.querySelector('#message'),start:document.querySelector('#start'),mates:document.querySelector('#mates'),score:document.querySelector('#score'),mount:document.querySelector('#mount')};
 ctx.imageSmoothingEnabled=false;
 ctx.scale(2,2);
-const atlas=new Image(),panorama=new Image();atlas.src='characters-crisp.png';panorama.src='pampas-background.png';
+const atlas=new Image(),panorama=new Image();atlas.src='characters-crisp.png';panorama.src='pampas-background-fine.png';
 const keys=new Set(),platforms=[{x:0,y:187,w:500,h:38},{x:540,y:181,w:330,h:44},{x:900,y:186,w:410,h:39},{x:1350,y:178,w:360,h:47},{x:1750,y:187,w:400,h:38},{x:2190,y:180,w:430,h:45},{x:2670,y:188,w:450,h:37},{x:3170,y:178,w:390,h:47},{x:3610,y:187,w:490,h:38},{x:4200,y:181,w:500,h:44},{x:4740,y:188,w:500,h:37},{x:5270,y:181,w:470,h:44}];
 for(const p of platforms) if(p.w>150) for(let i=70;i<p.w-25;i+=88) platforms.push({x:p.x+i,y:p.y-25-(i%3)*8,w:44,h:9,small:true});
 const world=5700,finish=5530, collectibles=[];for(let x=190;x<world-180;x+=155)collectibles.push({x,y:120-(x%3)*7,got:false,bob:x%17});
