@@ -96,7 +96,7 @@ async function handler(req,res){headers(res);const url=new URL(req.url,'http://l
  if(method==='GET'&&(p==='/privacidad'||p==='/terminos'))return file(res,PUBLIC,'legal.html');
  if(method==='GET'&&(p==='/'||p==='/favoritos'||p==='/ranking'||/^\/juegos\/[a-z0-9-]+$/.test(p)))return file(res,PUBLIC,'index.html');
  if(method==='GET'&&p.startsWith('/assets/'))return file(res,path.join(PUBLIC,'assets'),p.slice(8));
- if(method==='GET'&&['/analytics.js','/portal.css','/arcade-social.css','/app.js','/admin.js','/player.js','/save-bridge.js','/auth.js','/game-bridge.js'].includes(p))return file(res,PUBLIC,p.slice(1));
+ if(method==='GET'&&['/analytics.js','/portal.css','/arcade-social.css','/arcade-polish.css','/app.js','/admin.js','/player.js','/save-bridge.js','/auth.js','/game-bridge.js','/ratings.js'].includes(p))return file(res,PUBLIC,p.slice(1));
  problem(404,'No encontramos esa página.');
 }
 const server=http.createServer((req,res)=>{handler(req,res).catch(e=>{if(res.headersSent){res.destroy();return;}json(res,e.status||500,{error:e.status?e.message:'No pudimos completar la operación.'});if(!e.status)console.error('Portal request failed:',e.message);});});server.requestTimeout=90000;server.headersTimeout=20000;
