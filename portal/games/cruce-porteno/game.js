@@ -3,12 +3,12 @@ const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d'),W=960,H
 ctx.imageSmoothingEnabled=false;
 const lanes=[{x:256,dir:1,s:69,k:'taxi'},{x:298,dir:-1,s:84,k:'car'},{x:340,dir:1,s:62,k:'bus'},{x:382,dir:-1,s:75,k:'taxi'},{x:424,dir:1,s:93,k:'car'},{x:516,dir:-1,s:82,k:'metro'},{x:558,dir:1,s:67,k:'taxi'},{x:600,dir:-1,s:95,k:'bus'},{x:642,dir:1,s:73,k:'car'},{x:684,dir:-1,s:87,k:'taxi'}];
 const cover=new Image();cover.src='/assets/cruce-porteno-cover.png';
-let state='title',player={x:150,y:275},mates=3,score=0,level=1,photos=0,flashes=3,flashTimer=0,invulnerable=0,toast='',toastUntil=0,traffic=[],pickups=[],last=0,shake=0,walk=0,lights=0;
+let state='title',player={x:224,y:275},mates=3,score=0,level=1,photos=0,flashes=3,flashTimer=0,invulnerable=0,toast='',toastUntil=0,traffic=[],pickups=[],last=0,shake=0,walk=0,lights=0;
 const keys=new Set(),COLS=['#c2d6d4','#a9c2cc','#e8c46e','#83a5b5'];
 const rr=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))};
 function box(x,y,w,h,c,edge='#182126'){rr(x-2,y-2,w+4,h+4,edge);rr(x,y,w,h,c)}
 function initTraffic(){traffic=[];lanes.forEach((lane,i)=>{const count=lane.k==='bus'||lane.k==='metro'?2:3;for(let n=0;n<count;n++)traffic.push({lane:i,x:lane.x,y:35+n*(490/count)+Math.random()*50,kind:lane.k,color:lane.k==='taxi'?'#e5bb43':lane.k==='bus'?'#6d9cc6':lane.k==='metro'?'#359a67':COLS[Math.floor(Math.random()*COLS.length)],len:lane.k==='bus'?78:lane.k==='metro'?96:lane.k==='taxi'?44:41,stun:0})})}
-function start(){state='play';player={x:150,y:275};mates=Math.max(mates,1);score=0;level=1;photos=0;flashes=3;flashTimer=0;invulnerable=1;shake=0;initTraffic();pickups=[{x:470,y:177,type:'photo',got:false},{x:470,y:370,type:'mate',got:false}];say('¡CRUZÁ HASTA EL OBELISCO!')}
+function start(){state='play';player={x:224,y:275};mates=Math.max(mates,1);score=0;level=1;photos=0;flashes=3;flashTimer=0;invulnerable=1;shake=0;initTraffic();pickups=[{x:470,y:177,type:'photo',got:false},{x:470,y:370,type:'mate',got:false}];say('¡CRUZÁ HASTA EL OBELISCO!')}
 function say(s){toast=s;toastUntil=performance.now()+1500}
 function pavement(){// city blocks and sidewalks
  rr(0,0,W,H,'#b9ae8f');
@@ -30,7 +30,7 @@ function pavement(){// city blocks and sidewalks
  // endpoint plazas
  plaza(0,65,'BUENOS AIRES');plaza(790,65,'OBELISCO');drawObelisk(870,270);
  // tourist start arrow
- if(state==='title'){ctx.fillStyle='#fff0bf';ctx.font='bold 11px monospace';ctx.fillText('SALIDA  →',88,244);}
+ if(state==='title'){ctx.fillStyle='#fff0bf';ctx.font='bold 11px monospace';ctx.fillText('SALIDA  →',144,244);}
 }
 function crosswalk(x){rr(x,0,17,H,'#555d5b');for(let y=6;y<H;y+=17)rr(x+2,y,12,8,'#f2e6cb')}
 function tree(x,y,s=1){rr(x-2*s,y+5*s,4*s,9*s,'#694e35');rr(x-8*s,y,16*s,9*s,'#3a6149');rr(x-6*s,y-4*s,12*s,7*s,'#54815a');rr(x-2*s,y-7*s,6*s,5*s,'#6a9664')}
@@ -44,9 +44,9 @@ function tourist(){ctx.save();ctx.translate(Math.round(player.x),Math.round(play
 function pickupDraw(){for(const p of pickups){if(p.got)continue;if(p.type==='photo'){rr(p.x-10,p.y-7,20,14,'#f0d38c');rr(p.x-7,p.y-4,14,8,'#527986');rr(p.x+4,p.y-9,7,5,'#f8e5bd');rr(p.x-2,p.y-2,5,5,'#d6a95f');rr(p.x-2,p.y-2,2,2,'#f8edcc')}else{rr(p.x-7,p.y-7,14,16,'#bc8150');rr(p.x-9,p.y-9,18,4,'#edcf88');rr(p.x+4,p.y-12,3,6,'#e7e1c7');rr(p.x+3,p.y-2,7,8,'#6e9b72')} }}
 function update(dt){if(state!=='play')return;walk+=dt*9;lights+=dt*10;flashTimer=Math.max(0,flashTimer-dt);invulnerable=Math.max(0,invulnerable-dt);shake=Math.max(0,shake-40*dt);for(const c of traffic){if(c.stun>0){c.stun-=dt;continue}const lane=lanes[c.lane];c.y+=lane.dir*lane.s*(1+(level-1)*.13)*dt;if(c.y>575)c.y=-35;if(c.y<-60)c.y=555;if(Math.abs(player.x-lane.x)<24&&Math.abs(player.y-c.y)<(c.kind==='bus'||c.kind==='metro'?42:32)&&invulnerable<=0){hit()}}
  for(const p of pickups){if(!p.got&&Math.abs(player.x-p.x)<20&&Math.abs(player.y-p.y)<22){p.got=true;if(p.type==='photo'){photos++;score+=600;say('¡POSTAL DEL OBELISCO! +600');flashes=Math.min(3,flashes+1)}else if(mates<3){mates++;say('MATE DE RESCATE · +1 VIDA')}else{score+=250;say('MATE YERBEADO · +250')}}}
- if(player.x>824){score+=1800*level;if(level<3){level++;player={x:150,y:275};invulnerable=1.3;initTraffic();pickups=[{x:470,y:150+Math.random()*100,type:'photo',got:false},{x:470,y:350,type:Math.random()<.65?'mate':'photo',got:false}];say(['','¡CRUZASTE! SEGUNDA TRAVESÍA','¡ÚLTIMO CRUCE, VAMOS!'][level])}else{state='win';say('¡FOTO CON EL OBELISCO!');window.PixelSurArcade?.submitScore(score)}}}
-function hit(){mates--;player={x:150,y:275};invulnerable=1.6;shake=10;say(mates?'¡UF! MATE Y VOLVEMOS':'¡SIN MATES! FIN DEL VIAJE');if(mates<=0){state='over';window.PixelSurArcade?.submitScore(score)}}
-function move(dx,dy){if(state!=='play')return;player.x=Math.max(112,Math.min(854,player.x+dx));player.y=Math.max(78,Math.min(462,player.y+dy));if(player.x>444&&player.x<495)player.x=470;if(player.y>265&&player.y<326&&player.x>436&&player.x<506)player.y=295}
+ if(player.x>824){score+=1800*level;if(level<3){level++;player={x:224,y:275};invulnerable=1.3;initTraffic();pickups=[{x:470,y:150+Math.random()*100,type:'photo',got:false},{x:470,y:350,type:Math.random()<.65?'mate':'photo',got:false}];say(['','¡CRUZASTE! SEGUNDA TRAVESÍA','¡ÚLTIMO CRUCE, VAMOS!'][level])}else{state='win';say('¡FOTO CON EL OBELISCO!');window.PixelSurArcade?.submitScore(score)}}}
+function hit(){mates--;player={x:224,y:275};invulnerable=1.6;shake=10;say(mates?'¡UF! MATE Y VOLVEMOS':'¡SIN MATES! FIN DEL VIAJE');if(mates<=0){state='over';window.PixelSurArcade?.submitScore(score)}}
+function move(dx,dy){if(state!=='play')return;player.x=Math.max(224,Math.min(854,player.x+dx));player.y=Math.max(78,Math.min(462,player.y+dy));if(player.x>444&&player.x<495)player.x=470;if(player.y>265&&player.y<326&&player.x>436&&player.x<506)player.y=295}
 function flash(){if(state!=='play'||flashes<=0||flashTimer>0)return;flashes--;flashTimer=1.3;score+=35;say('¡FLASH! TRÁNSITO EN PAUSA');for(const c of traffic)if(Math.abs(c.x-player.x)<210&&Math.abs(c.y-player.y)<165)c.stun=1.15}
 function hud(){box(16,13,224,59,'#152127d9','#34464a');ctx.fillStyle='#f3d08d';ctx.font='bold 13px monospace';ctx.fillText('CRUCE PORTEÑO',29,34);ctx.fillStyle='#a9d5c4';ctx.font='9px monospace';ctx.fillText('AV. 9 DE JULIO · NIVEL '+level,29,51);ctx.fillStyle='#f4e8cb';ctx.font='bold 11px monospace';ctx.fillText('PUNTAJE '+String(score).padStart(6,'0'),29,66);
  box(738,13,204,59,'#152127d9','#34464a');ctx.fillStyle='#b6d79a';ctx.font='9px monospace';ctx.fillText('MATES / VIDAS',751,31);for(let i=0;i<3;i++){rr(842+i*28,24,17,20,i<mates?'#b9774a':'#4a4d42');rr(839+i*28,21,22,5,i<mates?'#efd18b':'#777564');rr(853+i*28,26,3,10,i<mates?'#f3e6c3':'#777564')}ctx.fillStyle='#f0d38c';ctx.fillText('FLASH',751,57);for(let i=0;i<3;i++){rr(798+i*14,49,9,9,i<flashes?'#8bc8bd':'#46514b');if(flashTimer>0&&i===flashes)rr(798+i*14,49,9,9,'#f5d179')}
