@@ -1,0 +1,34 @@
+(function(root,factory){const api=factory();if(typeof module==='object')module.exports=api;else root.AlasCore=api;})(typeof window!=='undefined'?window:this,()=>{
+'use strict';
+const W=576,H=768,DURATION=42,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const PLANES={pucara:{name:'IA-58 Pucará',speed:260,fire:.19,damage:5},mirage:{name:'Mirage III',speed:330,fire:.15,damage:5}};
+const MISSIONS=[{name:'COSTA AUSTRAL',boss:'ESCOLTA DE AVANZADA',color:'#70959d'},{name:'EL ESTRECHO',boss:'DESTRUCTOR',color:'#708a9f'},{name:'ULTIMA PASADA',boss:'BUQUE DE DESEMBARCO',color:'#a08a8a'}];
+function create(plane='pucara',stage=0,score=0,lives=5){return{plane:PLANES[plane]?plane:'pucara',stage,score,lives,state:'playing',time:0,phase:'waves',player:{x:288,y:650,inv:2.5,roll:0,cool:0},shots:[],bullets:[],enemies:[],pickups:[],warnings:[],boss:null,events:[],fire:0,wave:1.1,boat:4.5,serial:0,kills:0,landed:0,bombs:3,bombFlash:0,stageKills:0,rolls:0};}
+function event(s,type,more={}){s.events.push({type,...more});}
+function bullet(s,x,y,vx,vy,r=4,color='gold'){s.bullets.push({x,y,vx,vy,r,color});}
+function aimed(s,x,y,speed,spread=0){const a=Math.atan2(s.player.y-y,s.player.x-x);bullet(s,x,y,Math.cos(a+spread)*speed,Math.sin(a+spread)*speed);}
+function addEnemy(s,type,x,y,extra={}){const stats={fighter:[15,16],ace:[25,20],boat:[25,18],gunboat:[60,26],destroyer:[105,34]};const [hp,r]=stats[type];const e={id:s.serial++,type,x,y,baseX:x,age:0,hp,max:hp,r,fire:1.4,flash:0,...extra};s.enemies.push(e);return e;}
+function hit(s){if(s.state!=='playing'||s.player.inv>0||s.player.roll>0)return;s.lives--;event(s,'hit',{x:s.player.x,y:s.player.y});s.bullets=[];s.warnings=[];s.player.inv=3;s.player.x=288;s.player.y=650;if(s.lives<=0){s.lives=0;s.state='lost';event(s,'lost',{reason:'mates'});}}
+function kill(s,e){if(e.dead)return;e.dead=true;s.kills++;s.stageKills++;s.score+=e.type==='destroyer'?450:e.type==='gunboat'?250:e.type==='boat'?180:120;event(s,'explode',{x:e.x,y:e.y,big:['destroyer','gunboat'].includes(e.type),water:['boat','gunboat','destroyer'].includes(e.type)});if(s.kills%8===0)s.pickups.push({x:e.x,y:e.y,type:s.kills%16===0?'mate':'bomb',age:0});}
+function bomb(s){if(s.bombs<=0||s.state!=='playing')return false;s.bombs--;s.bullets=[];s.warnings=[];s.bombFlash=.45;s.player.inv=Math.max(s.player.inv,1.2);for(const e of s.enemies){e.hp-=70;if(e.hp<=0)kill(s,e);}if(s.boss){s.boss.hp-=85;s.boss.flash=.25;}event(s,'bomb',{x:s.player.x,y:s.player.y});return true;}
+function roll(s){if(s.player.cool>0||s.state!=='playing')return false;s.player.cool=7;s.player.roll=1.15;s.rolls++;event(s,'roll');return true;}
+function startBoss(s){s.phase='boss';s.enemies=s.enemies.filter(e=>e.type!=='boat');s.bullets=[];s.warnings=[];s.boss={x:288,y:-170,hp:440+s.stage*120,max:440+s.stage*120,fire:1.8,age:0,flash:0,pattern:0};event(s,'boss');}
+function step(s,input,dt){s.events=[];if(s.state!=='playing')return s;dt=clamp(dt,0,.025);s.time+=dt;s.bombFlash=Math.max(0,s.bombFlash-dt);const p=s.player,stats=PLANES[s.plane];p.inv=Math.max(0,p.inv-dt);p.roll=Math.max(0,p.roll-dt);p.cool=Math.max(0,p.cool-dt);
+if(input.bomb)bomb(s);if(input.roll)roll(s);
+let dx=(input.right?1:0)-(input.left?1:0),dy=(input.down?1:0)-(input.up?1:0);const length=Math.hypot(dx,dy)||1;p.x=clamp(p.x+dx/length*stats.speed*dt+(input.dragX||0),28,W-28);p.y=clamp(p.y+dy/length*stats.speed*dt+(input.dragY||0),105,H-42);
+s.fire-=dt;if(s.fire<=0){s.fire=stats.fire;const spread=s.plane==='pucara'?[-.12,0,.12]:[-.035,.035];for(const a of spread)s.shots.push({x:p.x+(a<0?-10:a>0?10:0),y:p.y-26,vx:Math.sin(a)*460,vy:-Math.cos(a)*560,damage:stats.damage});event(s,'shoot');}
+if(s.phase==='waves'){s.wave-=dt;s.boat-=dt;if(s.wave<=0){const n=3+(s.stage>0?1:0),id=s.serial;for(let i=0;i<n;i++)addEnemy(s,id%3===0?'ace':'fighter',72+i*(432/(n-1)),-45-i*35,{side:id%2?1:-1});if(id%2===0)addEnemy(s,'gunboat',id%4?470:100,-90);s.wave=3.7-s.stage*.4;}
+if(s.boat<=0){const x=70+((s.serial*89)%430);addEnemy(s,'boat',x,-55);if(s.stage===2)addEnemy(s,'boat',576-x,-160);s.boat=6.4-s.stage*.8;}
+if(s.time>=DURATION)startBoss(s);}
+for(const e of s.enemies){if(e.dead)continue;e.age+=dt;e.flash=Math.max(0,e.flash-dt);const naval=['boat','gunboat','destroyer'].includes(e.type);e.y+=(e.type==='boat'?65:e.type==='gunboat'?38:e.type==='ace'?86:72)*dt;e.x=clamp(e.baseX+Math.sin(e.age*(naval?.6:1.5)+e.id)* (naval?16:46),26,550);e.fire-=dt;if(e.type!=='boat'&&e.y>60&&e.y<580&&e.fire<=0){aimed(s,e.x,e.y+20,115+s.stage*13);if(e.type==='gunboat')aimed(s,e.x,e.y+20,110,-.23);e.fire=2.1-s.stage*.15;event(s,'enemyfire');}
+if(e.type==='boat'&&e.y>720){e.dead=true;s.landed++;event(s,'landing');if(s.landed>=5){s.state='lost';event(s,'lost',{reason:'coast'});}}else if(e.y>835)e.dead=true;
+if(!naval&&Math.hypot(e.x-p.x,e.y-p.y)<e.r+13){hit(s);e.dead=true;}}
+if(s.boss){const b=s.boss;b.age+=dt;b.flash=Math.max(0,b.flash-dt);b.y=Math.min(195,b.y+70*dt);b.x=288+Math.sin(b.age*.55)*(s.stage===2?74:115);b.fire-=dt;if(b.y>=170&&b.fire<=0){b.pattern++;const phase=b.hp/b.max<.45?1:0;for(let i=-2-phase;i<=2+phase;i++){const angle=Math.PI/2+i*.20;bullet(s,b.x,b.y+65,Math.cos(angle)*(115+s.stage*10),Math.sin(angle)*(115+s.stage*10),5);}if(b.pattern%2===0){const x=clamp(p.x,50,526);s.warnings.push({x,time:1.1,width:24,life:1.1});}b.fire=1.5-s.stage*.12;event(s,'enemyfire');}}
+for(const w of s.warnings){w.time-=dt;if(w.time<=0&&!w.fired){w.fired=true;for(let i=0;i<4;i++)bullet(s,w.x,95-i*35,0,270,6,'red');event(s,'salvo');}}s.warnings=s.warnings.filter(w=>w.time>-.2);
+for(const a of s.shots){a.x+=a.vx*dt;a.y+=a.vy*dt;for(const e of s.enemies){if(e.dead||a.dead)continue;const naval=['boat','gunboat','destroyer'].includes(e.type);if(Math.abs(a.x-e.x)<e.r&&Math.abs(a.y-e.y)<(naval?e.r*1.7:e.r)){a.dead=true;e.hp-=a.damage;e.flash=.08;event(s,'spark',{x:a.x,y:a.y});if(e.hp<=0)kill(s,e);}}
+if(s.boss&&!a.dead){const b=s.boss;if(Math.abs(a.x-b.x)<(s.stage===2?66:40)&&Math.abs(a.y-b.y)<100&&b.y>30){a.dead=true;b.hp-=a.damage;b.flash=.05;event(s,'spark',{x:a.x,y:a.y});}}}
+for(const b of s.bullets){b.x+=b.vx*dt;b.y+=b.vy*dt;if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+9){b.dead=true;hit(s);}}
+for(const k of s.pickups){k.y+=48*dt;k.age+=dt;if(Math.hypot(k.x-p.x,k.y-p.y)<29){k.dead=true;if(k.type==='mate')s.lives=Math.min(5,s.lives+1);else s.bombs=Math.min(4,s.bombs+1);s.score+=100;event(s,'pickup',{x:k.x,y:k.y,type:k.type});}}
+s.shots=s.shots.filter(a=>!a.dead&&a.y>-30&&a.x>-20&&a.x<596);s.bullets=s.bullets.filter(b=>!b.dead&&b.y<810&&b.y>-120&&b.x>-30&&b.x<606);s.enemies=s.enemies.filter(e=>!e.dead);s.pickups=s.pickups.filter(k=>!k.dead&&k.y<810);
+if(s.state==='playing'&&s.boss&&s.boss.hp<=0){s.score+=2500+s.lives*250+(5-s.landed)*100;s.state='won';s.bullets=[];event(s,'win',{x:s.boss.x,y:s.boss.y});}return s;}
+return{W,H,DURATION,PLANES,MISSIONS,create,step,hit,bomb,roll,addEnemy,startBoss,clamp};});
