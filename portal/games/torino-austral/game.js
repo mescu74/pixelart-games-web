@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d'),W=960,H=540,skyline=183,finish=6800;
+const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d'),W=960,H=540,skyline=232,finish=6800;
 ctx.scale(1.5,1.5);ctx.imageSmoothingEnabled=false;
 const landscape=new Image();landscape.src='landscape.png';
 const steppe=new Image();steppe.src='steppe.png';
@@ -10,21 +10,96 @@ function reset(){state='drive';score=0;travel=0;speed=72;steer=0;mates=3;objects
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
 function poly(points,c){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill()}
 function bg(){const image=route===1?steppe:landscape;if(image.complete&&image.naturalWidth)ctx.drawImage(image,0,0,W,H);else{const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#e86f68');g.addColorStop(.48,'#f4b866');g.addColorStop(1,'#9b794c');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}ctx.fillStyle=routes[route].tint;ctx.fillRect(0,0,W,H)}
-function bend(t){return Math.sin(travel*.00065+t*1.9)*112*t+Math.sin(travel*.00021+t*3.4)*48*t}
-function road(){const bands=76;for(let i=0;i<bands;i++){let t=(i+.5)/bands,y=skyline+t*(H-skyline),half=16+t*405,cx=W/2+bend(t),road= t>.36&&Math.floor((i+Math.floor(travel*.035)) / 5)%2===0?'#3d4247':'#45464a',shoulder=Math.floor((i+Math.floor(travel*.035))/5)%2===0?'#f4e1b5':'#c65743';rect(cx-half-11,y,11,Math.max(2,(H-skyline)/bands+1),'#b6493e');rect(cx-half,y,half*2,Math.max(2,(H-skyline)/bands+1),road);rect(cx+half,y,11,Math.max(2,(H-skyline)/bands+1),'#b6493e');rect(cx-half-9,y,5,Math.max(2,(H-skyline)/bands+1),shoulder);rect(cx+half+4,y,5,Math.max(2,(H-skyline)/bands+1),shoulder)}
- for(let n=0;n<17;n++){let z=((n/17+((travel*.00072)%1))%1),t=z*z,y=skyline+t*(H-skyline),cx=W/2+bend(t),half=16+t*405,w=1+t*8;if(Math.floor(n/1)%2===0){for(const lane of [-1,1])rect(cx+lane*half/3-w/2,y,w,2+t*10,'#f5dfac')}}
- // edge gravel glints and perspective rumble strips
- for(let i=0;i<22;i++){let z=((i/22+((travel*.00045)%1))%1),t=z*z,y=skyline+t*(H-skyline),cx=W/2+bend(t),half=16+t*405;rect(cx-half-18-t*5,y,3+t*3,2+t*2,i%2?'#e6b56c':'#eee0b0');rect(cx+half+14+t*5,y,3+t*3,2+t*2,i%2?'#e6b56c':'#eee0b0')}
+function bend(t){return Math.sin(travel*.00038+t*1.45)*44*t+Math.sin(travel*.00014+t*2.8)*16*t}
+function roadHalf(t){return 18+t*382}
+function road(){
+ // Stable vanishing point aligned with the mountain foothills. Build the road
+ // in shallow scanlines so its shoulders widen evenly toward the camera.
+ const bands=82;
+ for(let i=0;i<bands;i++){
+  const t=(i+.5)/bands,y=skyline+t*(H-skyline),h=roadHalf(t),cx=W/2+bend(t),row=(H-skyline)/bands+1;
+  rect(cx-h-18-t*5,y,18+t*5,row,'#927c64');
+  rect(cx-h-13-t*4,y,13+t*4,row,i%2?'#d9c18e':'#c7b182');
+  rect(cx-h,y,h*2,row,'#41464a');
+  rect(cx-h+2,y,Math.max(1,2+t*2),row,'#686a68');
+  rect(cx+h-2-t*2,y,Math.max(1,2+t*2),row,'#686a68');
+  rect(cx+h,y,13+t*4,row,i%2?'#d9c18e':'#c7b182');
+  rect(cx+h+13+t*4,y,18+t*5,row,'#927c64');
+ }
+ // Two restrained center dashes establish lane direction and scale.
+ for(let n=0;n<19;n++){
+  const z=((n/19+((travel*.00072)%1))%1),t=z*z,y=skyline+t*(H-skyline),cx=W/2+bend(t),h=roadHalf(t),w=1+t*3;
+  if(n%2===0)for(const lane of [-1,1])rect(cx+lane*h/3-w/2,y,w,1+t*15,'#eee2c2');
+ }
+ // Short edge marks follow the road curve rather than floating over the scenery.
+ for(let i=0;i<20;i++){
+  const z=((i/20+((travel*.00043)%1))%1),t=z*z,y=skyline+t*(H-skyline),cx=W/2+bend(t),h=roadHalf(t),w=1+t*3;
+  rect(cx-h-w-1,y,w,1+t*7,i%2?'#eee2c2':'#d6ad67');
+  rect(cx+h+1,y,w,1+t*7,i%2?'#eee2c2':'#d6ad67');
+ }
 }
-function roadside(){for(let i=0;i<10;i++){let z=((i/10+travel*.00019)%1),t=z*z,x=W/2+bend(t),y=skyline+t*(H-skyline),s=5+t*43;for(const side of [-1,1]){const tx=x+side*(16+t*405+s*.45);if(i%3===0){rect(tx-s*.12,y-s*.5,s*.24,s*.5,'#4a382e');poly([[tx-s*.6,y-s*.35],[tx,y-s*1.2],[tx+s*.6,y-s*.35]],i%2?'#29463f':'#3e5543');poly([[tx-s*.45,y-s*.55],[tx,y-s*1.25],[tx+s*.45,y-s*.55]],'#49684d')}else{rect(tx-s*.08,y-s*.7,s*.16,s*.7,'#66503d');rect(tx-s*.25,y-s*.55,s*.5,s*.18,'#bb8150');rect(tx-s*.2,y-s*.37,s*.4,s*.13,'#e9bd75')}}}}
+function roadside(){
+ for(let i=0;i<12;i++){
+  const z=((i/12+travel*.00018)%1),t=z*z,x=W/2+bend(t),y=skyline+t*(H-skyline),h=roadHalf(t),s=3+t*39;
+  for(const side of [-1,1]){
+   const tx=x+side*(h+24+t*8);
+   if(i%4===0){
+    // Layered lenga and cypress silhouettes at the roadside.
+    rect(tx-s*.09,y-s*.48,s*.18,s*.48,'#49382d');
+    poly([[tx-s*.48,y-s*.30],[tx,y-s*1.02],[tx+s*.48,y-s*.30]],'#29423c');
+    poly([[tx-s*.38,y-s*.52],[tx,y-s*1.22],[tx+s*.38,y-s*.52]],'#3d5b4b');
+    rect(tx-s*.05,y-s*.88,s*.1,s*.08,'#78906b');
+   }else{
+    // Argentine highway delineator with a metal post and reflective cap.
+    rect(tx-s*.07,y-s*.80,s*.14,s*.80,'#6b6457');
+    rect(tx-s*.19,y-s*.60,s*.38,s*.20,'#ddd2ae');
+    rect(tx-s*.15,y-s*.57,s*.14,s*.11,side<0?'#d45e4b':'#f0e2c0');
+    rect(tx-s*.09,y-s*.08,s*.18,s*.08,'#413c35');
+   }
+  }
+ }
+}
 function car(x,y,s,color='#167d82',kind='torino'){ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.scale(s,s);if(kind==='torino'){// pixel-built original Torino rear silhouette
  rect(-4,-2,8,3,'#07131b');rect(-15,-22,30,37,'#101921');rect(-13,-23,26,35,color);rect(-11,-25,22,5,'#55b4aa');rect(-10,-18,20,6,'#d9c58a');rect(-11,-12,22,5,color);rect(-13,-8,4,9,'#bd4d3e');rect(9,-8,4,9,'#bd4d3e');rect(-11,2,22,4,'#d8d4bd');rect(-14,8,5,9,'#131b22');rect(9,8,5,9,'#131b22');rect(-8,12,16,3,'#e9dec3');rect(-5,-20,10,3,'#24434a');rect(-4,-19,3,2,'#90c5bc');}
- else {rect(-3,-1,6,2,'#101820');rect(-11,-14,22,23,'#101820');rect(-9,-15,18,22,color);rect(-7,-13,14,5,'#273e47');rect(-8,-8,16,5,color);rect(-7,2,14,3,'#e7d6b4');rect(-10,5,4,7,'#111820');rect(6,5,4,7,'#111820');rect(-8,-2,3,4,'#ef6955');rect(5,-2,3,4,'#ef6955');}
+ else if(kind==='pickup'){
+  rect(-17,-11,5,20,'#171c20');rect(12,-11,5,20,'#171c20');
+  poly([[-13,-27],[-9,-30],[9,-30],[13,-25],[15,8],[11,13],[-11,13],[-15,8]],'#172027');
+  poly([[-12,-25],[-8,-29],[8,-29],[12,-24],[12,-14],[-12,-14]],color);
+  rect(-9,-26,18,8,'#283b45');rect(-5,-25,2,7,'#6f8b8b');rect(3,-25,2,7,'#6f8b8b');
+  rect(-11,-13,22,3,'#d6c28e');rect(-10,-9,20,13,color);
+  rect(-8,-7,16,8,'#705c46');rect(-7,-6,14,2,'#a48a62');rect(-7,-1,14,2,'#493e34');
+  rect(-13,0,4,8,'#c7473d');rect(9,0,4,8,'#c7473d');rect(-10,8,20,3,'#e4deca');rect(-6,9,12,3,'#faf3d9');
+ }
+ else if(kind==='van'){
+  rect(-17,-11,5,21,'#171c20');rect(12,-11,5,21,'#171c20');
+  poly([[-15,-27],[-11,-31],[11,-31],[15,-27],[16,7],[12,13],[-12,13],[-16,7]],'#172027');
+  poly([[-13,-26],[-10,-29],[10,-29],[13,-25],[13,-13],[-13,-13]],color);
+  rect(-10,-25,20,9,'#283d49');rect(-8,-24,7,7,'#6d8b91');rect(1,-24,7,7,'#6d8b91');
+  rect(-12,-12,24,17,color);rect(-13,-6,26,3,'#d8c796');
+  rect(-14,0,4,8,'#c7473d');rect(10,0,4,8,'#c7473d');rect(-10,8,20,3,'#ddd8c5');rect(-6,9,12,3,'#f8f0d7');
+  rect(-8,-9,16,2,'#ffffff55');
+ }
+ else {
+  // Rear view of a small car ahead: wheels, shoulder line, rear glass,
+  // tail lamps and bumper remain legible as it scales toward the player.
+  rect(-15,-11,5,20,'#171c20');rect(10,-11,5,20,'#171c20');
+  rect(-13,-23,26,36,'#172027');
+  poly([[-13,-15],[-10,-24],[-6,-29],[6,-29],[10,-24],[13,-15],[14,7],[10,12],[-10,12],[-14,7]],color);
+  rect(-8,-25,16,3,'#f4d89b');rect(-6,-22,12,2,'#fff0c8');
+  poly([[-8,-20],[-5,-26],[5,-26],[8,-20],[7,-11],[-7,-11]],'#263b46');
+  rect(-5,-24,2,10,'#6e8b8e');rect(3,-24,2,10,'#6e8b8e');rect(-7,-13,14,3,'#bad0c8');
+  rect(-11,-9,22,3,'#21323a');rect(-12,-5,24,3,'#18242b');
+  rect(-12,-2,4,9,'#c7473d');rect(8,-2,4,9,'#c7473d');
+  rect(-11,0,2,4,'#ffb77b');rect(9,0,2,4,'#ffb77b');
+  rect(-6,-1,12,6,'#c7b98f');rect(-4,0,8,3,'#e4dcc2');
+  rect(-14,8,28,4,'#c5c4b8');rect(-12,11,24,2,'#eef0df');
+  rect(-7,-28,14,2,'#ffffff44');
+ }
  ctx.restore()}
 function itemIcon(x,y,s){ctx.save();ctx.translate(x,y);ctx.scale(s,s);rect(-4,-7,8,12,'#b97a4e');rect(-5,-8,10,3,'#efcc82');rect(2,-10,3,4,'#e3e3bf');rect(1,-4,5,6,'#6b8b65');rect(-3,-5,2,2,'#f3e7bd');ctx.restore()}
-function paintObjects(){for(const o of objects){const d=o.d-travel;if(d<0||d>1750)continue;const z=1-d/1750,t=z*z,y=skyline+t*(H-skyline),cx=W/2+bend(t),half=16+t*405,x=cx+o.lane*half*.68,s=.22+t*.92;if(o.type==='mate'){ctx.save();ctx.globalAlpha=.65+t*.35;ctx.shadowColor='#f6d37b';ctx.shadowBlur=8+t*14;itemIcon(x,y-14*t,s);ctx.restore();if(t>.35){rect(x-25*t,y-35*t,50*t,3,'#121a20');rect(x-25*t,y-35*t,50*t*(1-(d/1750)) ,3,'#f4d17c')}}else car(x,y-22*t,s,o.color,'traffic')}}
+function paintObjects(){for(const o of objects){const d=o.d-travel;if(d<0||d>1750)continue;const z=1-d/1750,t=z*z,y=skyline+t*(H-skyline),cx=W/2+bend(t),half=roadHalf(t),x=cx+o.lane*half*.68,s=.22+t*.92;if(o.type==='mate'){ctx.save();ctx.globalAlpha=.65+t*.35;ctx.shadowColor='#f6d37b';ctx.shadowBlur=8+t*14;itemIcon(x,y-14*t,s);ctx.restore();if(t>.35){rect(x-25*t,y-35*t,50*t,3,'#121a20');rect(x-25*t,y-35*t,50*t*(1-(d/1750)) ,3,'#f4d17c')}}else car(x,y-22*t,s,o.color,o.vehicle||'traffic')}}
 function drawPlayer(){const x=W/2+steer*245,y=H-79;ctx.save();if(invulnerable>0&&Math.floor(invulnerable*12)%2===0)ctx.globalAlpha=.35;ctx.fillStyle='#15212b88';ctx.beginPath();ctx.ellipse(x,y+12,29,10,0,0,Math.PI*2);ctx.fill();if(torinoSprite.complete&&torinoSprite.naturalWidth)ctx.drawImage(torinoSprite,x-38,y-36,76,67);else car(x,y,1.45,'#147d83','torino');ctx.restore();if(speed>155){for(let i=0;i<4;i++){rect(x-42-i*10,y+8+((travel+i*21)%27),2,8,'#f5cd7c66');rect(x+40+i*10,y+8+((travel+i*21)%27),2,8,'#f5cd7c66')}}}
-function spawn(){const d=travel+1500+Math.random()*400,roll=Math.random();if(roll<.23&&distSinceMate>1000){objects.push({type:'mate',lane:Math.floor(Math.random()*3)-1,d});distSinceMate=0}else{objects.push({type:'traffic',lane:Math.floor(Math.random()*3)-1,d,color:['#d45b45','#e3bf73','#668ec1','#87a676'][Math.floor(Math.random()*4)]});distSinceMate+=900}}
+function spawn(){const d=travel+1500+Math.random()*400,roll=Math.random();if(roll<.23&&distSinceMate>1000){objects.push({type:'mate',lane:Math.floor(Math.random()*3)-1,d});distSinceMate=0}else{objects.push({type:'traffic',vehicle:['traffic','pickup','van'][Math.floor(Math.random()*3)],lane:Math.floor(Math.random()*3)-1,d,color:['#d45b45','#e3bf73','#668ec1','#87a676','#d2d0c1'][Math.floor(Math.random()*5)]});distSinceMate+=900}}
 function particlesAt(x,y,color){for(let i=0;i<22;i++)particles.push({x,y,vx:(Math.random()-.5)*5,vy:(Math.random()-.8)*4,color,life:.5+Math.random()*.5})}
 function crash(){if(invulnerable>0)return;mates--;speed=58;invulnerable=2.1;flash=.32;shake=15;particlesAt(W/2+steer*245,H-70,'#ffd37b');toast=mates?'¡GOLPAZO! MATE Y SEGUIMOS':'¡SE TERMINÓ EL MATE!';toastTill=performance.now()+1500;if(mates<=0)end(false)}
 function end(win){state=win?'win':'over';speed=0;score+=win?3500:0;window.PixelSurArcade?.submitScore(Math.floor(score))}
