@@ -21,5 +21,5 @@ for(const name of ['landscape.png','steppe.png','torino.png'])await cp(path.join
 const cruce=path.join(root,'portal/games/cruce-porteno'),cruceOut=path.join(root,'portal/bundled/cruce-porteno');
 await rm(cruceOut,{recursive:true,force:true});await mkdir(path.join(cruceOut,'public'),{recursive:true});
 for(const name of ['index.html','game.js'])await cp(path.join(cruce,name),path.join(cruceOut,name));
-for(const name of ['traveler.png','taxi.png','colectivo.png'])await cp(path.join(cruce,name),path.join(cruceOut,'public',name));
+for(const name of ['traveler.png','taxi.png','colectivo.png']){await cp(path.join(cruce,name),path.join(cruceOut,name));await cp(path.join(cruce,name),path.join(cruceOut,'public',name));}
 console.log('Bundled BA Invaders, Salto del Sur, Mudanza Porteña, Torino Austral and Cruce Porteño with original pixel art.');
