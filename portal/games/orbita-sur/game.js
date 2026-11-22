@@ -8,16 +8,16 @@ const audio={ctx:null,on:saved.sound,last:0,enable(){try{this.ctx??=new (window.
 const fmt=n=>Math.floor(n).toString().padStart(6,'0');
 class Orbit extends Phaser.Scene{
  constructor(){super('Orbit');}
- preload(){for(const key of ['player','scout','manta','tank','boss0','boss1','boss2','mate']){if(key==='mate')this.load.image(key,`assets/${key}.png`);else{const size=key.startsWith('boss')?96:48;this.load.spritesheet(key,`assets/${key}-sheet.png`,{frameWidth:size,frameHeight:size});}}}
+ preload(){this.load.image('nebula','assets/nebula-v2.png');for(const key of ['player','scout','manta','tank','boss0','boss1','boss2','mate']){if(key==='mate')this.load.image(key,`assets/${key}.png`);else{const size=key.startsWith('boss')?96:48;this.load.spritesheet(key,`assets/${key}-sheet.png`,{frameWidth:size,frameHeight:size});}}}
  create(){
-  this.W=this.scale.width;this.H=this.scale.height;this.fx=this.add.graphics().setDepth(20);this.bg=this.add.graphics().setDepth(-10);this.trails=this.add.graphics().setDepth(0);this.ship=this.add.image(this.W*.5,this.H*.78,'player').setScale(1.4).setDepth(10);
+  this.W=this.scale.width;this.H=this.scale.height;this.backdrop=this.add.image(this.W/2,this.H/2,'nebula').setDisplaySize(this.W,this.H).setDepth(-11);this.fx=this.add.graphics().setDepth(20);this.bg=this.add.graphics().setDepth(-10);this.trails=this.add.graphics().setDepth(0);this.ship=this.add.image(this.W*.5,this.H*.78,'player').setScale(1.4).setDepth(10);
   this.stars=Array.from({length:140},()=>({x:Math.random()*this.W,y:Math.random()*this.H,z:Math.random(),tw:Math.random()*6}));
   this.enemies=[];this.shots=[];this.hostile=[];this.particles=[];this.pickups=[];this.rings=[];this.delayed=[];this.beam=null;this.muzzle=0;this.timeAlive=0;this.clock=0;this.mode='title';this.sector=0;this.score=0;this.lives=5;this.pulse=0;this.invuln=0;this.wave=0;this.kills=0;this.boss=null;this.bannerTime=0;this.fire=0;this.phase='waves';this.waveWait=2;
   this.keys=this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,P,ESC');this.input.keyboard.addCapture(['UP','DOWN','LEFT','RIGHT','SPACE']);
   this.input.keyboard.on('keydown-SPACE',e=>{if(!e.repeat)this.pulseBurst();});this.input.keyboard.on('keydown-P',e=>{if(!e.repeat)this.togglePause();});this.input.keyboard.on('keydown-ESC',()=>{if(this.mode==='playing')this.togglePause();});
   this.input.on('pointerdown',p=>{if(this.mode==='playing'){this.dragging=true;this.target={x:p.x,y:p.y};}});this.input.on('pointermove',p=>{if(this.dragging&&p.isDown)this.target={x:p.x,y:p.y};});this.input.on('pointerup',()=>{this.dragging=false;this.target=null;});
   this.game.events.on(Phaser.Core.Events.BLUR,()=>{if(this.mode==='playing')this.togglePause();});
-  this.scale.on('resize',size=>{const sx=size.width/this.W,sy=size.height/this.H;this.W=size.width;this.H=size.height;this.ship.x*=sx;this.ship.y*=sy;for(const a of [...this.enemies,...this.shots,...this.hostile,...this.pickups]){a.x*=sx;a.y*=sy;if(Number.isFinite(a.baseX))a.baseX*=sx;}if(this.beam)this.beam.xs=this.beam.xs.map(x=>Phaser.Math.Clamp(x*sx,25,this.W-25));for(const s of this.stars){s.x*=sx;s.y*=sy;}});
+  this.scale.on('resize',size=>{const sx=size.width/this.W,sy=size.height/this.H;this.W=size.width;this.H=size.height;this.backdrop.setPosition(this.W/2,this.H/2).setDisplaySize(this.W,this.H);this.ship.x*=sx;this.ship.y*=sy;for(const a of [...this.enemies,...this.shots,...this.hostile,...this.pickups]){a.x*=sx;a.y*=sy;if(Number.isFinite(a.baseX))a.baseX*=sx;}if(this.beam)this.beam.xs=this.beam.xs.map(x=>Phaser.Math.Clamp(x*sx,25,this.W-25));for(const s of this.stars){s.x*=sx;s.y*=sy;}});
   $('#start').onclick=()=>{audio.enable();if(this.mode==='paused')this.resume();else this.start();};$('#pause').onclick=()=>this.togglePause();$('#touch-pulse').onclick=()=>this.pulseBurst();$('#sound').onclick=()=>{audio.on=!audio.on;saved.sound=audio.on;audio.enable();persist();this.soundUI();};$('.brand').onclick=e=>e.preventDefault();
   this.soundUI();this.hud();$('#record').textContent='RÉCORD '+fmt(saved.best);
  }
@@ -92,7 +92,7 @@ class Orbit extends Phaser.Scene{
   }
   if(this.beam){const b=this.beam;for(const x of b.xs){if(b.charge>0){g.fillStyle(b.color,.08);g.fillRect(x-20,85,40,this.H-85);g.fillStyle(b.color,.4+Math.sin(t*30)*.3);for(let y=90;y<this.H;y+=18)g.fillRect(x-1,y,2,8);g.lineStyle(2,b.color,.8);g.strokeTriangle(x-8,this.H-40,x+8,this.H-40,x,this.H-53);}else{g.fillStyle(b.color,.12);g.fillRect(x-30,80,60,this.H);g.fillStyle(b.color,.75);g.fillRect(x-12,80,24,this.H);g.fillStyle(0xfff6da,1);g.fillRect(x-4,80,8,this.H);}}}
  }
- drawBackground(dt){const g=this.bg,w=this.W,h=this.H,t=this.timeAlive,s=this.sector;g.clear();g.fillStyle([0x080f24,0x100f28,0x101728][s],1);g.fillRect(0,0,w,h);
+ drawBackground(dt){const g=this.bg,w=this.W,h=this.H,t=this.timeAlive,s=this.sector;g.clear();g.fillStyle([0x080f24,0x100f28,0x101728][s],.22);g.fillRect(0,0,w,h);
   // Quantized nebula bands; no gradients or smooth vector art inside the field.
   const col=[0x183450,0x302149,0x344039][s];for(let i=0;i<12;i++){g.fillStyle(col,.11);g.fillRect(Math.floor((Math.sin(i*.7+t*.03)*w*.15+w*.2+i*19)/8)*8,Math.floor((i*80+t*6)%(h+250)-170),80+i*8,120);}
   if(s===0){const cx=w*.85,cy=h*1.1+Math.sin(t*.05)*10,r=Math.min(w*.5,h*.65);g.fillStyle(0x234660,1);g.fillCircle(cx,cy,r+4);g.fillStyle(0x142e49,1);g.fillCircle(cx,cy,r);for(let i=0;i<50;i++){const x=cx-r+((i*79)%Math.floor(r*2)),y=cy-r+((i*43)%Math.floor(r*2));if((x-cx)**2+(y-cy)**2<(r-6)**2){g.fillStyle(i%3===0?0x32677a:0x215168,.7);g.fillRect(Math.floor(x/8)*8,Math.floor(y/8)*8,8+(i%4)*8,8);}}}

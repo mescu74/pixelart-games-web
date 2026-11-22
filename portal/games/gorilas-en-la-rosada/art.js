@@ -1,6 +1,10 @@
 /* Original, code-drawn pixel art. No traced or extracted commercial sprites. */
 (function(){'use strict';
 const P={ink:'#202039',deep:'#372940',rose:'#bf6d7b',pink:'#e59b99',light:'#ffc1a5',gold:'#f8ce80',teal:'#8be2d5',white:'#fff0da'};
+const backdrop=new Image(),pendingBackdrops=[];
+backdrop.onload=()=>{for(const entry of pendingBackdrops)paintBackdrop(entry.canvas,entry.stage);pendingBackdrops.length=0;};
+backdrop.src='assets/rosada-dusk-v2.png';
+function paintBackdrop(canvas,stage){const c=canvas.getContext('2d');c.clearRect(0,0,960,720);c.imageSmoothingEnabled=false;c.drawImage(backdrop,0,0,960,720);if(stage===1||stage===2){c.fillStyle=stage===1?'rgba(183,76,54,.08)':'rgba(33,57,106,.2)';c.fillRect(0,0,960,720);}}
 function rect(c,x,y,w,h,color){c.fillStyle=color;c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
 function poly(c,points,color){c.fillStyle=color;c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();}
 function text(c,t,x,y,size=14,color=P.white,align='left'){c.font=`bold ${size}px monospace`;c.textAlign=align;c.textBaseline='top';c.fillStyle=P.ink;c.fillText(t,x+1,y+2);c.fillStyle=color;c.fillText(t,x,y);}
@@ -30,7 +34,7 @@ for(const x of[40,920]){rect(c,x,432,5,253,'#222b40');rect(c,x-7,432,19,6,'#8e87
 for(const x of[20,942]){rect(c,x,310,8,207,'#5d505a');for(let i=0;i<6;i++){let sign=i%2?1:-1,yy=300+i*8;poly(c,[[x+3,321],[x+sign*(36+i*5),yy],[x+sign*(50+i*4),yy+8],[x+sign*20,yy+17]],'#263e43');}}
 // Tiny hand-placed stone patina, deterministic and cached.
 for(let i=0;i<320;i++){let x=110+(i*113)%737,y=148+(i*71)%509;rect(c,x,y,i%3?3:6,1,i%2?'#e8a295':'#bd7584');}
-return canvas;}
+if(backdrop.complete&&backdrop.naturalWidth)paintBackdrop(canvas,stage);else pendingBackdrops.push({canvas,stage});return canvas;}
 function crest(c,x,y,s=1){c.save();c.translate(x,y);c.scale(s,s);poly(c,[[0,0],[13,0],[13,13],[6,19],[0,13]],'#eecf85');rect(c,2,2,9,11,'#78c5db');rect(c,2,6,9,4,'#fff1d5');rect(c,5,2,3,4,'#efc86f');rect(c,5,10,3,6,'#b68c60');c.restore();}
 function drawHero(c,x,y,t=0,mode='idle',dir=1,scale=1){c.save();c.translate(Math.round(x),Math.round(y));c.scale(dir*scale,scale);const walking=mode==='run',climb=mode==='climb',salute=mode==='salute',step=walking?Math.round(Math.sin(t)*4):0,bob=walking?Math.abs(Math.sin(t))*1.3:Math.sin(t*.7)*.5;c.translate(0,-bob);
 // Feet and pleated trousers.
