@@ -16,9 +16,10 @@ for(const name of ['index.html','game.js','scene.png'])await cp(path.join(puzzle
 await cp(path.join(puzzle,'scene.png'),path.join(puzzleOut,'public','scene.png'));
 const torino=path.join(root,'portal/games/torino-austral'),torinoOut=path.join(root,'portal/bundled/torino-austral');
 await rm(torinoOut,{recursive:true,force:true});await mkdir(path.join(torinoOut,'public'),{recursive:true});
-for(const name of ['index.html','game.js','landscape.png'])await cp(path.join(torino,name),path.join(torinoOut,name));
-await cp(path.join(torino,'landscape.png'),path.join(torinoOut,'public','landscape.png'));
+for(const name of ['index.html','game.js','landscape.png','steppe.png','torino.png'])await cp(path.join(torino,name),path.join(torinoOut,name));
+for(const name of ['landscape.png','steppe.png','torino.png'])await cp(path.join(torino,name),path.join(torinoOut,'public',name));
 const cruce=path.join(root,'portal/games/cruce-porteno'),cruceOut=path.join(root,'portal/bundled/cruce-porteno');
 await rm(cruceOut,{recursive:true,force:true});await mkdir(path.join(cruceOut,'public'),{recursive:true});
 for(const name of ['index.html','game.js'])await cp(path.join(cruce,name),path.join(cruceOut,name));
+for(const name of ['traveler.png','taxi.png','colectivo.png'])await cp(path.join(cruce,name),path.join(cruceOut,'public',name));
 console.log('Bundled BA Invaders, Salto del Sur, Mudanza Porteña, Torino Austral and Cruce Porteño with original pixel art.');
