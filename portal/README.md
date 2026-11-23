@@ -34,6 +34,16 @@ Abrir http://127.0.0.1:3000. La primera ejecución crea una clave fuerte de admi
 
 Las subidas deben ser juegos propios o contar con las licencias correspondientes. No incluir credenciales, archivos de servidor ni dependencias que requieran backend.
 
+### Juego incluido en el repositorio
+
+`Puños del Sur` se empaqueta en `portal/bundled/punos-del-sur` y su ficha pública se crea como juego integrado al iniciar el portal. Para reconstruir los archivos de distribución y el ZIP de administración:
+
+```sh
+node games/punos-del-sur/package.mjs
+```
+
+La portada pública está en `portal/public/assets/punos-del-sur-cover.jpg`. No requiere subir archivos desde el panel ni modificar el volumen persistente.
+
 ## Coolify
 
 - Cuenta: ThxuLab - Olabox; proyecto Growza; entorno dev.
