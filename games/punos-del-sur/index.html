@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#10151b">
+  <title>Puños del Sur · Pixel Sur Arcade</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="cabinet" aria-label="Puños del Sur, juego de pelea arcade">
+    <canvas id="game" width="1280" height="720" tabindex="0" aria-label="Juego. Usá A y D para moverte, W para saltar, S para cubrirte, J para golpe, K para patada y L para especial."></canvas>
+    <div class="touch-controls" aria-label="Controles táctiles">
+      <div class="move-controls">
+        <button data-key="a" aria-label="Mover a la izquierda">◀</button>
+        <button data-key="d" aria-label="Mover a la derecha">▶</button>
+        <button data-key="w" aria-label="Saltar">▲</button>
+        <button data-key="s" aria-label="Cubrirse">◆</button>
+      </div>
+      <div class="fight-controls">
+        <button data-key="j" aria-label="Golpe rápido">P</button>
+        <button data-key="k" aria-label="Patada fuerte">K</button>
+        <button data-key="l" class="special" aria-label="Golpe especial">★</button>
+      </div>
+    </div>
+    <div id="live" class="sr-only" aria-live="polite"></div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
